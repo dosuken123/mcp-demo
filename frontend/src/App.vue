@@ -4,7 +4,7 @@ import LoginForm from './components/LoginForm.vue'
 
 <template>
   <header>
-    <h1>My Vue Login App</h1>
+    <h1>My MCP Host</h1>
   </header>
 
   <main>

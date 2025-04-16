@@ -16,7 +16,7 @@ const state = ref('')
 const oauthConfig = {
   authorizationEndpoint: 'http://localhost:8000/oauth/authorize',
   tokenEndpoint: 'http://localhost:8000/oauth/token',
-  clientId: 'your-client-id', // Replace with your client ID
+  clientId: 'my-mcp-client', // Replace with your client ID
   redirectUri: window.location.origin + '/callback', // Adjust as needed
   scope: 'read write', // Adjust scopes as needed
   resourceEndpoint: 'http://localhost:8000/users/me/',
@@ -81,8 +81,8 @@ const tryAccessResource = async () => {
         }
       }
       
-      // If refresh failed or no refresh token, initiate auth flow
-      await initiateOAuthFlow();
+      // // If refresh failed or no refresh token, initiate auth flow
+      // await initiateOAuthFlow();
       return false;
     }
     
@@ -99,7 +99,7 @@ const tryAccessResource = async () => {
     
     // Initiate OAuth flow if no token or other error
     if (error.message === 'No access token available') {
-      await initiateOAuthFlow();
+      // await initiateOAuthFlow();
     } else {
       errorMessage.value = error.message;
     }
@@ -324,7 +324,7 @@ onMounted(async () => {
 
 <template>
   <div>
-    <h2>{{ userData ? 'Welcome' : 'OAuth Authentication' }}</h2>
+    <h2>{{ userData ? 'Welcome' : '' }}</h2>
     
     <div v-if="errorMessage" style="color: red; margin: 10px 0;">
       {{ errorMessage }}
@@ -341,7 +341,7 @@ onMounted(async () => {
     <!-- Manual Login Button (as fallback) -->
     <div v-if="!userData && !isLoading">
       <button @click="initiateOAuthFlow" style="background: #4285F4; color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; margin-top: 20px;">
-        Sign in with OAuth
+        Request access to MCP server with OAuth
       </button>
     </div>
     

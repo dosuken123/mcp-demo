@@ -25,9 +25,9 @@ REFRESH_TOKEN_EXPIRE_DAYS = 30
 # OAuth client settings
 # In a real application, this would be stored in a database
 OAUTH_CLIENTS = {
-    "your-client-id": {
-        "client_id": "your-client-id",
-        "client_name": "My OAuth Client",
+    "my-mcp-client": {
+        "client_id": "my-mcp-client",
+        "client_name": "My MCP Client",
         "redirect_uris": ["http://localhost:5173/callback"],
         "allowed_scopes": ["read", "write"]
     }
@@ -97,7 +97,7 @@ LOGIN_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+    <title>MCP Server Login</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -140,7 +140,7 @@ LOGIN_TEMPLATE = """
     </style>
 </head>
 <body>
-    <h2>Login to {{ client_name }}</h2>
+    <h2>{{ client_name }} is requesting access to your account on MCP server.</h2>
     
     {% if error %}
     <div class="error">{{ error }}</div>
@@ -167,7 +167,7 @@ LOGIN_TEMPLATE = """
         
         {% if scope %}
         <div class="scopes">
-            <p><strong>The application is requesting the following permissions:</strong></p>
+            <p><strong>{{ client_name }} is requesting the following permissions:</strong></p>
             <ul>
                 {% for s in scope.split(' ') %}
                 <li>{{ s }}</li>
