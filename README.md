@@ -16,6 +16,13 @@ Here is the overview of the auth flow:
 
 You can use it as a reference when introducing [a MCP server with the authorization protocol](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#2-2-example%3A-authorization-code-grant).
 
+## Changelog of MCP spec
+
+This demo adheres the latest protocol spec listed below.
+
+- https://modelcontextprotocol.io/specification/2025-03-26
+- https://modelcontextprotocol.io/specification/2024-11-05
+
 ## How to run
 
 Run frontend:
