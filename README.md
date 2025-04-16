@@ -1,20 +1,26 @@
-# OAuth2.1 auth flow demo with FastAPI backend and Vue.js frontend
+# Minimal example of Model Context Protocol (MCP) client and server implementations
 
-This repository demonstrates how OAuth2.1 auth flow works in a minimal code example.
-It uses FastAPI python server as backend and Vue.js application as frontend.
+This repository demonstrates the minimal example of MCP client and server implementations.
+It follows [Model Context Protocol spec](https://modelcontextprotocol.io/introduction)
+**without** relying on official or 3rd party MCP SDKs, so that you can examine the low-level details of
+MCP flow, including authentication and authorization via OAuth2.1.
+This is mainly for enterprise software/server that can't use MCP SDKs as it-is due to the existing server stack and business logic.
 
-The backend server behaves as authorization and resource server.
+While this demo is written in Python as backend server and Vue.js as frontend server,
+the implemented logic can be translated/adopted into the other programming language
+where the open-source libraries might not support yet.
 
-This auth flow supports PKCE (generating code challenge with SHA256) as it's required in OAuth 2.1.
+## Details
 
-Here is the overview of the auth flow:
+- It supports how OAuth2.1 flow as it's described in https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#2-2-example%3A-authorization-code-grant.
+  - This auth flow supports PKCE (generating code challenge with SHA256) as it's required in OAuth 2.1.
+  - The backend server behaves as authorization and resource server.
 
-1. A user visits the web site. If authorization is not done yet, it's redirected to the authorization server (`GET /authorize` endpoint).
-1. The user logins to the authorization server (`POST /login` endpoint). If it's successful, it's redirected to the callback URL in the frontend (`http://localhost:5173/callback`).
-1. Frontend requests to `POST /token` endpoint to generate an access token (JWT).
-1. Frontend requests to a protected resource endpoint (e.g. `GET /users/me/`)
-
-You can use it as a reference when introducing [a MCP server with the authorization protocol](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#2-2-example%3A-authorization-code-grant).
+  - Here is the overview of the auth flow:
+    1. A user visits the web site. If authorization is not done yet, it's redirected to the authorization server (`GET /authorize` endpoint).
+    1. The user logins to the authorization server (`POST /login` endpoint). If it's successful, it's redirected to the callback URL in the frontend (`http://localhost:5173/callback`).
+    1. Frontend requests to `POST /token` endpoint to generate an access token (JWT).
+    1. Frontend requests to a protected resource endpoint (e.g. `GET /users/me/`)
 
 ## Changelog of MCP spec
 
