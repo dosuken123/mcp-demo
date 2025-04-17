@@ -10,10 +10,10 @@ This demo uses [HTTP/SSE transport](https://modelcontextprotocol.io/docs/concept
 This demo does NOT use the [stdio transport](https://modelcontextprotocol.io/docs/concepts/transports#standard-input%2Foutput-stdio) which is designed for the "local" MCP server.
 There are several reasons why it's preferred to go after a remote MCP Server rather than a local MCP Server, for example:
 
-- **Backward compatibility**: You have to hard-code the API caller to your data server in the local MCP server. When you change the API spec of your data server, the local MCP Server could stop working because the API requests are incompatible. Unifying the MCP server and your data server minimizes this risk.
-- **Extensibility & Maintanability**: When the local MCP Server needs a specific context data from your data server, you have to implement a corresponding public API at first. Unifying the MCP server and your data server reduces this friction.
-- **Classification**: Local MCP Server requires the API of your data server to be public. For the highly classified servers, it could be a deal breaker.
-- **Telemetry**: Track which MCP Client consumes which API/data of your data server. You might not be able to track this if you let local MCP Server directly access to the public API of your data server, because servers can't differentiate the requester type (e.g. Is it an automation in CI or MCP tool calling?).
+- **Backward compatibility**: In the local MCP server, you have to hard-code the API caller to your data server. When you change the API spec of your data server, the local MCP Server could stop working because the API requests are incompatible. Unifying the MCP server and your data server minimizes this risk.
+- **Extensibility & Maintanability**: In the local MCP server, when it needs a specific context data from your data server, you have to implement a corresponding API at first. Unifying the MCP server and your data server reduces this friction.
+- **Classification**: With the local MCP server, it requires the API of your data server to be public. With the remote MCP server, it exposes only a few endpoints for the MCP transport.
+- **Telemetry**: With the local MCP server, you might not be able to track data usage by LLM because servers can't differentiate the requester type (e.g. Is it an automation in CI or MCP tool calling?). Centralizing the access to the MCP's endpoints allows you to track it.
 
 While this demo is written in Python as backend server and Vue.js as frontend server,
 the implemented logic can be translated/adopted into the other programming language
