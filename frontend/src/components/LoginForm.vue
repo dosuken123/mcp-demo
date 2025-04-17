@@ -82,7 +82,7 @@ onMounted(async (): Promise<void> => {
 
 <template>
   <div>
-    <h2>{{ userData ? 'Welcome' : 'MCP Client auth' }}</h2>
+    <h2>{{ userData ? 'Welcome' : 'My MCP Client auth' }}</h2>
     
     <div v-if="errorMessage" style="color: red; margin: 10px 0;">
       {{ errorMessage }}

@@ -31,16 +31,5 @@ This demo adheres the latest protocol spec listed below.
 
 ## How to run
 
-Run frontend:
-
-```
-cd frontend
-npm run dev
-```
-
-Run backend:
-
-```
-cd backend
-poetry run fastapi dev backend/main.py --host localhost
-```
+- Frontend: See [this doc](./frontend/README.md).
+- Backend: See [this doc](./backend/README.md).
