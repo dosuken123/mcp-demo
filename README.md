@@ -38,3 +38,23 @@ Here is the auth flow:
 
 1. Run [frontend](./frontend/README.md).
 1. Run [backend](./backend/README.md).
+
+## Why should we introduce remote MCP server?
+
+MCP is inspired by [Language Server Protocol](https://microsoft.github.io/language-server-protocol/).
+This is a great abstraction for [minimizing the frictions between programming languages and code editors](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide).
+While most of the cases Language Server is launched as a "local" server, MCP is not necessary to follow the same pattern, because:
+
+- Language Server mainly requires the local data in the user's computer, such as parsing code and annotate in VS Code. Most of the time, it doesn't need to fetch and modify a remote data.
+- MCP Server requires **both** local data in the user's computer **and** user's remote-and-private data in a remote service.
+
+Due to this different nature of data access patterns, it's ideal to separate the concerns in the following:
+
+- Remote MCP servers are for accessing remote context.
+  - Private data servers should provide MCP integration capability via HTTP/SSE transport. This ensures that the MCP Server _as a plugin to the MCP Host_ can only interact with the remote context, which doesn't overlap the responsibilities with the local context.
+- Local MCP servers are for accessing local context.
+  - Acceccing local context _can_ be handled by a local MCP server _or_ this is a part of the business logic in MCP Host (e.g. Cursor).
+  - Local context handler can interact with user's local environment e.g. create a file.
+  - Local context handler can be combined with N remote MCP servers.
+  - Local context handler doesn't fetch remote context due to the separation of concerns.
+- MCP Host / LLM decide which remote MCP server and local MCP server (or local context handler) are used based on the input prompt.
