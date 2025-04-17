@@ -51,10 +51,10 @@ While most of the cases Language Server is launched as a "local" server, MCP is 
 Due to this different nature of data access patterns, it's ideal to separate the concerns in the following:
 
 - Remote MCP servers are for accessing remote context.
-  - Private data servers should provide MCP integration capability via HTTP/SSE transport. This ensures that the MCP Server _as a plugin to the MCP Host_ can only interact with the remote context, which doesn't overlap the responsibilities with the local context.
+  - Private data servers should provide MCP integration capability via HTTP/SSE transport. This ensures that the MCP Server _as a plugin to the MCP Host_ can only interact with the remote context, which doesn't overlap the responsibilities with the local context handler.
 - Local MCP servers are for accessing local context.
-  - Acceccing local context _can_ be handled by a local MCP server _or_ this is a part of the business logic in MCP Host (e.g. Cursor).
+  - Acceccing local context _can_ be handled by a local MCP server _or_ could be a part of the business logic of MCP Host (e.g. Cursor).
   - Local context handler can interact with user's local environment e.g. create a file.
   - Local context handler can be combined with N remote MCP servers.
-  - Local context handler doesn't fetch remote context due to the separation of concerns.
+  - Local context handler doesn't interact with remote context in favor of remote MCP servers.
 - MCP Host / LLM decide which remote MCP server and local MCP server (or local context handler) are used based on the input prompt.
