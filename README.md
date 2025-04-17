@@ -1,12 +1,12 @@
 # Example: Remote Model Context Protocol (MCP) Server without SDKs
 
-This repository demonstrates the minimal example of MCP client and **remote** server implementations.
+This repository demonstrates the minimal example of MCP client and remote server implementations.
 It follows [Model Context Protocol spec](https://modelcontextprotocol.io/introduction)
 **without** relying on official or 3rd party MCP SDKs, so that you can examine the low-level details of
 MCP flow, including authentication and authorization via OAuth2.1.
 This is mainly for enterprise software/server that can't use MCP SDKs as-is due to the existing server stack and business logic.
 
-This demo uses [HTTP/SSE transport](https://modelcontextprotocol.io/docs/concepts/transports#server-sent-events-sse) for the **remote** MCP Server implementation.
+This demo uses [HTTP/SSE transport](https://modelcontextprotocol.io/docs/concepts/transports#server-sent-events-sse) for the **remote** MCP Server implementation, which allows you to **unify** your private server and MCP cerver.
 This demo does NOT use the [stdio transport](https://modelcontextprotocol.io/docs/concepts/transports#standard-input%2Foutput-stdio) which is designed for the "local" MCP server.
 There are several reasons why it's preferred to go after a remote MCP Server rather than a local MCP Server, for example:
 
