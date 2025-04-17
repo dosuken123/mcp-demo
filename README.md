@@ -34,7 +34,7 @@ Here is the auth flow:
 1. Frontend requests to `POST /token` endpoint to generate an access token (JWT).
 1. Frontend requests to a protected resource endpoint (e.g. `GET /users/me/`)
 
-## How to run
+## Getting started
 
-- Frontend: See [this doc](./frontend/README.md).
-- Backend: See [this doc](./backend/README.md).
+1. Run [frontend](./frontend/README.md).
+1. Run [backend](./backend/README.md).
