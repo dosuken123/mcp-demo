@@ -6,14 +6,9 @@ It follows [Model Context Protocol spec](https://modelcontextprotocol.io/introdu
 MCP flow, including authentication and authorization via OAuth2.1.
 This is mainly for enterprise software/server that can't use MCP SDKs as-is due to the existing server stack and business logic.
 
-This demo uses [HTTP/SSE transport](https://modelcontextprotocol.io/docs/concepts/transports#server-sent-events-sse) for the **remote** MCP Server implementation, which allows you to **unify** your private server and MCP cerver.
+This demo uses [HTTP/SSE transport](https://modelcontextprotocol.io/docs/concepts/transports#server-sent-events-sse) for the **remote** MCP Server implementation, which allows you to **unify** your data server and MCP server.
 This demo does NOT use the [stdio transport](https://modelcontextprotocol.io/docs/concepts/transports#standard-input%2Foutput-stdio) which is designed for the "local" MCP server.
-There are several reasons why it's preferred to go after a remote MCP Server rather than a local MCP Server, for example:
-
-- **Backward compatibility**: In the local MCP server, you have to hard-code the API caller to your data server. When you change the API spec of your data server, the local MCP Server could stop working because the API requests are incompatible. Unifying the MCP server and your data server minimizes this risk.
-- **Extensibility & Maintanability**: In the local MCP server, when it needs a specific context data from your data server, you have to implement a corresponding API at first. Unifying the MCP server and your data server reduces this friction.
-- **Classification**: With the local MCP server, it requires the API of your data server to be public. With the remote MCP server, it exposes only a few endpoints for the MCP transport.
-- **Telemetry**: With the local MCP server, you might not be able to track data usage by LLM because servers can't differentiate the requester type (e.g. Is it an automation in CI or MCP tool calling?). Centralizing the access to the MCP's endpoints allows you to track it.
+There are several reasons why it's preferred to go after a **remote** MCP Server rather than a local MCP Server. See [Why should we introduce remote MCP server?](#why-should-we-introduce-remote-mcp-server) for more information.
 
 While this demo is written in Python as backend server and Vue.js as frontend server,
 the implemented logic can be translated/adopted into the other programming language
@@ -24,8 +19,13 @@ where the SDKs might not support yet.
 This demo is based on the latest MCP spec described in https://modelcontextprotocol.io/specification/2025-03-26.
 
 - It supports OAuth2.1 flow according to https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#2-2-example%3A-authorization-code-grant. This auth flow supports PKCE (generating code challenge with SHA256) as it's required in OAuth 2.1.
-- The frontend component represents **MCP Host** and **MCP Client** in the [MCP glossary](https://modelcontextprotocol.io/introduction). In [OAuth glossary](https://datatracker.ietf.org/doc/draft-ietf-oauth-v2-1/), it represents **Client**.
-- The backend component represents **MCP Server** and **Local Data Source** in the [MCP glossary](https://modelcontextprotocol.io/introduction). In [OAuth glossary](https://datatracker.ietf.org/doc/draft-ietf-oauth-v2-1/), it represents **Resource server** and **Authorization server**. And the dummy user in the in-memory database is called **Resource owner**.
+- The frontend component represents:
+  - **MCP Host** and **MCP Client** in [MCP glossary](https://modelcontextprotocol.io/introduction).
+  - **Client** in [OAuth glossary](https://datatracker.ietf.org/doc/draft-ietf-oauth-v2-1/).
+- The backend component represents:
+  - **MCP Server** and **Local Data Source** in [MCP glossary](https://modelcontextprotocol.io/introduction).
+  - **Resource server** and **Authorization server** in [OAuth glossary](https://datatracker.ietf.org/doc/draft-ietf-oauth-v2-1/).
+  - The dummy user in the in-memory database is called **Resource owner** in [OAuth glossary](https://datatracker.ietf.org/doc/draft-ietf-oauth-v2-1/).
 
 Here is the auth flow:
 
@@ -41,20 +41,27 @@ Here is the auth flow:
 
 ## Why should we introduce remote MCP server?
 
-MCP is inspired by [Language Server Protocol](https://microsoft.github.io/language-server-protocol/).
+Model Context Protocol was inspired by [Language Server Protocol](https://microsoft.github.io/language-server-protocol/).
 This is a great abstraction for [minimizing the frictions between programming languages and code editors](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide).
 While most of the cases Language Server is launched as a "local" server, MCP is not necessary to follow the same pattern, because:
 
-- Language Server mainly requires the local data in the user's computer, such as parsing code and annotate in VS Code. Most of the time, it doesn't need to fetch and modify a remote data.
-- MCP Server requires **both** local data in the user's computer **and** user's remote-and-private data in a remote service.
+- Editor extensions mainly requires local data in the user's computer, such as parsing code and annotate in VS Code. Most of the time, it doesn't need to interact with remote data.
+- MCP Hosts requires **both** local data in the user's computer **and** user's remote-and-private data in a remote service. Both local and remote environment/context are interactable with LLM agent.
 
-Due to this different nature of data access patterns, it's ideal to separate the concerns in the following:
+Due to this different nature of data access patterns, it's ideal to design the separate the concerns in the following:
 
-- Remote MCP servers are for accessing remote context.
-  - Private data servers should provide MCP integration capability via HTTP/SSE transport. This ensures that the MCP Server _as a plugin to the MCP Host_ can only interact with the remote context, which doesn't overlap the responsibilities with the local context handler.
-- Local MCP servers are for accessing local context.
+- Remote MCP servers are for accessing remote context, only.
+  - Private data servers should provide MCP integration capability via HTTP/SSE transport. This ensures that the MCP Server _as a plugin to the MCP Host_ can only interact with the remote context, which doesn't conflict the responsibilities of the local context handler.
+- Local MCP servers are for accessing local context, only.
   - Acceccing local context _can_ be handled by a local MCP server _or_ could be a part of the business logic of MCP Host (e.g. Cursor).
-  - Local context handler can interact with user's local environment e.g. create a file.
-  - Local context handler can be combined with N remote MCP servers.
-  - Local context handler doesn't interact with remote context in favor of remote MCP servers.
-- MCP Host / LLM decide which remote MCP server and local MCP server (or local context handler) are used based on the input prompt.
+  - Local context handler can interact with user's local environment e.g. Create a file in a local file storage.
+  - Local context handler can be combined with N remote MCP servers e.g. Edit a file with a local MCP server. Push the change to GitHub via remote GitHub MCP server or to GitLab via remote GitLab MCP server.
+  - Local context handler shouldn't interact with remote context in order to respect the boundaries of remote MCP servers.
+- MCP Host / LLM decide which remote MCP server and local MCP server (or local context handler) are used based on the user's input prompt.
+
+In addition, there are several reasons why it's preferred to go after a remote MCP Server rather than a local MCP Server, for example:
+
+- **Backward compatibility**: In the local MCP server, you have to hard-code the API caller to your data server. When you change the API spec of your data server, the local MCP Server could stop working because the API requests are incompatible. Unifying the MCP server and your data server minimizes this risk.
+- **Extensibility & Maintanability**: In the local MCP server, when it needs a specific context data from your data server, you have to implement a corresponding API at first. Unifying the MCP server and your data server reduces this friction.
+- **Classification**: With the local MCP server, it requires the API of your data server to be public. With the remote MCP server, it exposes only a few endpoints for the MCP transport.
+- **Telemetry**: With the local MCP server, you might not be able to track data usage by LLM because servers can't differentiate the requester type (e.g. Is it an automation in CI or MCP tool calling?). Centralizing the access to the MCP's endpoints allows you to track it.
