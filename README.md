@@ -51,7 +51,7 @@ most of the cases Language Server is launched as a **local** server. However, MC
 - Editor extensions mainly requires local data in the user's computer, such as parsing code and annotate in VS Code. Most of the time, it doesn't need to interact with remote data.
 - MCP Hosts requires **both** local data in the user's computer **and** user's remote-and-private data in a remote service. Both local and remote environment/context are interactable by LLM agent.
 
-Due to this different nature of data access patterns, it's ideal to design the separate the concerns in the following:
+Due to this different nature of data access patterns, it's better to design the separate of concerns in the following way:
 
 - Remote MCP servers are for accessing remote context, only.
   - Private data servers should provide MCP integration capability via Streamable HTTP. This ensures that the MCP Server _as a plugin to the MCP Host_ can only interact with the remote context, which doesn't conflict responsibilities of the local context handler.
@@ -64,7 +64,7 @@ Due to this different nature of data access patterns, it's ideal to design the s
 
 In addition, there are several reasons why it's preferred to go after a remote MCP Server rather than a local MCP Server, for example:
 
-- **Backward compatibility**: In the local MCP server, you have to hard-code the API caller to your data server. When you change the API spec of your data server, the local MCP Server could stop working because the API requests are incompatible. Unifying the MCP server and your data server minimizes this risk.
+- **Backward compatibility**: In the local MCP server, you have to hard-code the API requests to your data server. When you change the API spec of your data server, the local MCP Server could stop working because the API requests are incompatible. Unifying the MCP server and your data server minimizes this risk.
 - **Extensibility & Maintanability**: In the local MCP server, when it needs a specific context data from your data server, you have to implement a corresponding API at first. Unifying the MCP server and your data server reduces this friction.
 - **Classification**: With the local MCP server, it requires the API of your data server to be public. With the remote MCP server, it exposes only a few endpoints for the MCP transport.
 - **Telemetry**: With the local MCP server, you might not be able to track data usage by LLM because servers can't differentiate the requester type (e.g. Is it an automation in CI or MCP tool calling?). Centralizing the access to the MCP's endpoints allows you to track it.

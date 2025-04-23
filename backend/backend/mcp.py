@@ -15,10 +15,6 @@ class Notification(JSONRPC):
     method: str
     params: Optional[list | dict]
 
-class SuccessResponse(JSONRPC):
-    result: dict = None
-    id: str | int = None
-
 class ErrorCode(Enum):
     ErrorCodeParseError = -32700
     ErrorCodeInvalidRequest = -32600
@@ -31,6 +27,10 @@ class Error(BaseModel):
     code: int | ErrorCode
     message: str
     data: Optional[str | dict] = None
+
+class SuccessResponse(JSONRPC):
+    result: dict = None
+    id: str | int = None
 
 class ErrorResponse(JSONRPC):
     error: Error
