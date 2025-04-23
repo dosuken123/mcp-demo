@@ -14,3 +14,18 @@
 cd backend
 poetry run fastapi dev backend/main.py --host localhost
 ```
+
+## Test modules
+
+```python
+poetry run python
+```
+
+```python
+from backend.mcp import ErrorCode, Error, ErrorResponse
+
+e = Error(code=ErrorCode.ErrorCodeParseError, message="error desc")
+res = ErrorResponse(error=e, id=1)
+res.model_dump_json()
+```
+

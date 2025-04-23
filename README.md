@@ -6,13 +6,18 @@ It follows [Model Context Protocol spec](https://modelcontextprotocol.io/introdu
 MCP flow, including authentication and authorization via OAuth2.1.
 This is mainly for enterprise software/server that can't use MCP SDKs as-is due to the existing server stack and business logic.
 
-This demo uses [HTTP/SSE transport](https://modelcontextprotocol.io/docs/concepts/transports#server-sent-events-sse) for the **remote** MCP Server implementation, which allows you to **unify** your data server and MCP server.
+This demo uses [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http) for the **remote** MCP Server implementation, which allows you to **unify** your data server and MCP server.
 This demo does NOT use the [stdio transport](https://modelcontextprotocol.io/docs/concepts/transports#standard-input%2Foutput-stdio) which is designed for the "local" MCP server.
 There are several reasons why it's preferred to go after a **remote** MCP Server rather than a local MCP Server. See [Why should we introduce remote MCP server?](#why-should-we-introduce-remote-mcp-server) for more information.
 
 While this demo is written in Python as backend server and Vue.js as frontend server,
 the implemented logic can be translated/adopted into the other programming language
 where the SDKs might not support yet.
+
+## Getting started
+
+1. Run [frontend](./frontend/README.md).
+1. Run [backend](./backend/README.md).
 
 ## Overview
 
@@ -34,30 +39,28 @@ Here is the auth flow:
 1. Frontend requests to `POST /token` endpoint to generate an access token (JWT).
 1. Frontend requests to a protected resource endpoint (e.g. `GET /users/me/`)
 
-## Getting started
-
-1. Run [frontend](./frontend/README.md).
-1. Run [backend](./backend/README.md).
-
 ## Why should we introduce remote MCP server?
 
-Model Context Protocol was inspired by [Language Server Protocol](https://microsoft.github.io/language-server-protocol/).
-This is a great abstraction for [minimizing the frictions between programming languages and code editors](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide).
-While most of the cases Language Server is launched as a "local" server, MCP is not necessary to follow the same pattern, because:
+Model Context Protocol  takes some inspiration from the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/), which is mentioned in https://modelcontextprotocol.io/specification/2025-03-26:
+
+> MCP takes some inspiration from the Language Server Protocol, which standardizes how to add support for programming languages across a whole ecosystem of development tools. In a similar way, MCP standardizes how to integrate additional context and tools into the ecosystem of AI applications.
+
+LSP is a great abstraction for [minimizing the frictions between programming languages and code editors](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide), and
+most of the cases Language Server is launched as a **local** server. However, MCP is not necessary to follow the same pattern, because:
 
 - Editor extensions mainly requires local data in the user's computer, such as parsing code and annotate in VS Code. Most of the time, it doesn't need to interact with remote data.
-- MCP Hosts requires **both** local data in the user's computer **and** user's remote-and-private data in a remote service. Both local and remote environment/context are interactable with LLM agent.
+- MCP Hosts requires **both** local data in the user's computer **and** user's remote-and-private data in a remote service. Both local and remote environment/context are interactable by LLM agent.
 
 Due to this different nature of data access patterns, it's ideal to design the separate the concerns in the following:
 
 - Remote MCP servers are for accessing remote context, only.
-  - Private data servers should provide MCP integration capability via HTTP/SSE transport. This ensures that the MCP Server _as a plugin to the MCP Host_ can only interact with the remote context, which doesn't conflict the responsibilities of the local context handler.
+  - Private data servers should provide MCP integration capability via Streamable HTTP. This ensures that the MCP Server _as a plugin to the MCP Host_ can only interact with the remote context, which doesn't conflict responsibilities of the local context handler.
 - Local MCP servers are for accessing local context, only.
   - Acceccing local context _can_ be handled by a local MCP server _or_ could be a part of the business logic of MCP Host (e.g. Cursor).
   - Local context handler can interact with user's local environment e.g. Create a file in a local file storage.
   - Local context handler can be combined with N remote MCP servers e.g. Edit a file with a local MCP server. Push the change to GitHub via remote GitHub MCP server or to GitLab via remote GitLab MCP server.
   - Local context handler shouldn't interact with remote context in order to respect the boundaries of remote MCP servers.
-- MCP Host / LLM decide which remote MCP server and local MCP server (or local context handler) are used based on the user's input prompt.
+- MCP Host / LLM decide which tool should be executed to resolve the user's input.
 
 In addition, there are several reasons why it's preferred to go after a remote MCP Server rather than a local MCP Server, for example:
 
