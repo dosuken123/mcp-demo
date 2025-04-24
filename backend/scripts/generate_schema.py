@@ -19,7 +19,7 @@ from pathlib import Path
 # Configuration
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-ANTHROPIC_MODEL = "claude-3-7-sonnet-20250219"  # Using Opus for the best code generation
+ANTHROPIC_MODEL = "claude-3-7-sonnet-20250219"
 JSON_SCHEMA_URL = os.environ.get("JSON_SCHEMA_URL")
 OUTPUT_FILE = "backend/mcp/schema.py"
 
@@ -55,21 +55,23 @@ def call_anthropic_api(schema):
 {schema}
 ```
 
-Convert this JSON schema into Pydantic classes for a python project.
-Copy descriptions in the JSON schema to the Pydantic classes as docstrings.
-Use StrEnum module if it's enum structure that uses string type for the values.
-If the root `type` is not `object` or undefined, define a type alias instead of using BaseModel.
+Convert this JSON schema into pydantic models for the schema.py file.
+Copy descriptions of the JSON schema to the pydantic models as docstrings.
+If the field `type` is `object`, all keys must be defined as fields of an Pydantic Model.
+If the field `type` is not `object` or undefined, define a type alias instead of using BaseModel.
+If `enum` keyword is used with string values, use StrEnum from enum module.
+If `const` keyword is used, set it as the default value of the field.
+Use `Field` of pydantic feature as much as possible. If the field name starts with underscore, do not use `Field` class.
 Do not omit for brevity.
-Do not add docsstrings that does not exist in the JSON schema.
-Do not use Fields module if the name of the field starts with underscore.
-Do not use Union module as the subclass.
-Do not use RootModel or __root__ of Pydantic features.
+Do not add docsstrings or comments that does not exist in the JSON schema.
+Do not use `Union` as the subclass.
+Do not use `RootModel` or `__root__` of pydantic features.
 Return only code blocks.
 """
     
     if current_file:
         prompt += f"""
-For the reference, here is the current Pydantic classes:
+For the reference, here is the current schema.py file:
 
 ```python
 {current_file}
@@ -86,7 +88,11 @@ For the reference, here is the current Pydantic classes:
                 "role": "user",
                 "content": prompt
             }
-        ]
+        ],
+        "thinking": {
+            "type": "enabled",
+            "budget_tokens": 30000
+        }
     }
     
     response = requests.post(ANTHROPIC_API_URL, headers=headers, json=data)
@@ -95,8 +101,10 @@ For the reference, here is the current Pydantic classes:
 
 def extract_python_code(response):
     """Extract Python code from the Anthropic API response"""
+    # print("response", response['content'])
+    text_block = [content for content in response['content'] if content.get('type')=='text'][0]
     # Get the text from the first content block
-    content = response['content'][0]['text']
+    content = text_block['text']
     
     # Extract code between Python code blocks
     code_blocks = re.findall(r'```python\n(.*?)```', content, re.DOTALL)
@@ -116,8 +124,8 @@ def save_code(code, output_path):
     # Create directory if it doesn't exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    header = f"""
-# This file is auto-generated based on {JSON_SCHEMA_URL} - do not modify manually.
+    header = f"""# This file is auto-generated based on {JSON_SCHEMA_URL} - do not modify manually.
+
 """
 
     code = header + code
