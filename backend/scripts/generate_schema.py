@@ -42,18 +42,41 @@ def call_anthropic_api(schema):
         "anthropic-version": "2023-06-01",
         "content-type": "application/json"
     }
+
+    if os.path.isfile(OUTPUT_FILE):
+        with open(OUTPUT_FILE, 'r') as file:
+            current_file = file.read()
+    else:
+        current_file = ""
+
     
     prompt = f"""
-Convert this JSON schema into Pydantic classes for a python project.
-Descriptions should be copied as docstrings.
-Use StrEnum module if it's enum structure that uses string type for the values.
-Do not omit for brevity.
-If a field name starts with underscore, do not use Fields module for the field.
-Return only code blocks.
-
 ```json
 {schema}
-```"""
+```
+
+Convert this JSON schema into Pydantic classes for a python project.
+Copy descriptions in the JSON schema to the Pydantic classes as docstrings.
+Use StrEnum module if it's enum structure that uses string type for the values.
+If the root `type` is not `object` or undefined, define a type alias instead of using BaseModel.
+Do not omit for brevity.
+Do not add docsstrings that does not exist in the JSON schema.
+Do not use Fields module if the name of the field starts with underscore.
+Do not use Union module as the subclass.
+Do not use RootModel or __root__ of Pydantic features.
+Return only code blocks.
+"""
+    
+    if current_file:
+        prompt += f"""
+For the reference, here is the current Pydantic classes:
+
+```python
+{current_file}
+```
+"""
+        
+    # print(f"prompt: {prompt}")
     
     data = {
         "model": ANTHROPIC_MODEL,
@@ -92,6 +115,12 @@ def save_code(code, output_path):
     """Save the generated code to the output file"""
     # Create directory if it doesn't exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    header = f"""
+# This file is auto-generated based on {JSON_SCHEMA_URL} - do not modify manually.
+"""
+
+    code = header + code
     
     with open(output_path, 'w') as f:
         f.write(code)

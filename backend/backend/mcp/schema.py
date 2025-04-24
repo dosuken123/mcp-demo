@@ -1,5 +1,7 @@
-from typing import Any, Dict, List, Optional, Union
+
+# This file is auto-generated based on https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/2025-03-26/schema.json - do not modify manually.
 from enum import StrEnum
+from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 class Role(StrEnum):
@@ -51,13 +53,15 @@ class EmbeddedResource(BaseModel):
     type: str = "resource"
     annotations: Optional[Annotations] = None
 
-class RequestId(BaseModel):
-    """A uniquely identifying ID for a request in JSON-RPC."""
-    pass
+# Type aliases for simple types
+RequestId = Union[str, int]
+"""A uniquely identifying ID for a request in JSON-RPC."""
 
-class ProgressToken(BaseModel):
-    """A progress token, used to associate progress notifications with the original request."""
-    pass
+ProgressToken = Union[str, int]
+"""A progress token, used to associate progress notifications with the original request."""
+
+Cursor = str
+"""An opaque token used to represent a cursor for pagination."""
 
 class Implementation(BaseModel):
     """Describes the name and version of an MCP implementation."""
@@ -147,10 +151,6 @@ class ProgressNotification(BaseModel):
     """An out-of-band notification used to inform the receiver of a progress update for a long-running request."""
     method: str = "notifications/progress"
     params: Dict[str, Any] = Field(...)
-
-class Cursor(BaseModel):
-    """An opaque token used to represent a cursor for pagination."""
-    pass
 
 class PaginatedRequest(BaseModel):
     method: str
@@ -439,20 +439,20 @@ class JSONRPCNotification(BaseModel):
 
 class JSONRPCRequest(BaseModel):
     """A request that expects a response."""
-    id: Union[str, int]
+    id: RequestId
     jsonrpc: str = "2.0"
     method: str
     params: Optional[Dict[str, Any]] = None
 
 class JSONRPCResponse(BaseModel):
     """A successful (non-error) response to a request."""
-    id: Union[str, int]
+    id: RequestId
     jsonrpc: str = "2.0"
     result: Result
 
 class JSONRPCError(BaseModel):
     """A response to a request that indicates an error occurred."""
-    id: Union[str, int]
+    id: RequestId
     jsonrpc: str = "2.0"
     error: Dict[str, Any]
 
@@ -464,28 +464,23 @@ class Request(BaseModel):
     method: str
     params: Optional[Dict[str, Any]] = None
 
+# Union types
 class ClientNotification(BaseModel):
-    """Union of all client notifications"""
     pass
 
 class ServerNotification(BaseModel):
-    """Union of all server notifications"""
     pass
 
 class ClientRequest(BaseModel):
-    """Union of all client requests"""
     pass
 
 class ServerRequest(BaseModel):
-    """Union of all server requests"""
     pass
 
 class ClientResult(BaseModel):
-    """Union of all client results"""
     pass
 
 class ServerResult(BaseModel):
-    """Union of all server results"""
     pass
 
 class JSONRPCMessage(BaseModel):
