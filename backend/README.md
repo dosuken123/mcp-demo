@@ -53,3 +53,27 @@ from backend.mcp.schema import JSONRPCRequest
 
 JSONRPCRequest(id="1", method="test", params={"a": "b"})
 ```
+
+## Test MCP endpoints
+
+```shell
+export BYPASS_AUTH=true
+poetry run fastapi dev backend/main.py --host localhost
+```
+
+```shell
+curl -H 'Content-Type: application/json' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+      -d '{ "title":"foo","body":"bar", "id": 1}' \
+      -X POST \
+      http://localhost:8000/mcp
+```
+
+## Test Login screen
+
+Access this URL in a web browser:
+
+```
+http://localhost:8000/oauth/authorize?response_type=code&client_id=my-mcp-client&redirect_uri=http%3A%2F%2Flocalhost%3A5173%2Fcallback&code_challenge=abc123
+```
