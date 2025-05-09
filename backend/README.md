@@ -62,12 +62,53 @@ poetry run fastapi dev backend/main.py --host localhost
 ```
 
 ```shell
-curl -H 'Content-Type: application/json' \
+curl -X POST \
+     http://localhost:8000/mcp \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json, text/event-stream' \
      -H 'Authorization: Bearer dummy' \
      -H 'Origin: localhost:5173' \
-      -d '{ "title":"foo","body":"bar", "id": 1}' \
-      -X POST \
-      http://localhost:8000/mcp
+     -d '{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "listTools",
+  "params": {
+    "additionalProp1": {}
+  }
+}'
+```
+
+or with batching:
+
+```shell
+curl -X POST \
+     http://localhost:8000/mcp \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json, text/event-stream' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+     -d '[
+  {
+    "jsonrpc": "2.0",
+    "id": "1",
+    "method": "string",
+    "params": {
+      "additionalProp1": {}
+    }
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "string",
+    "params": {
+      "additionalProp1": {}
+    }
+  },
+  {
+    "jsonrpc": "2.0",
+    "id": "2",
+    "result": {}
+  }
+]'
 ```
 
 ## Test Login screen

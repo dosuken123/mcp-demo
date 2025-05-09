@@ -1,8 +1,24 @@
 from fastapi import APIRouter
-from typing import Annotated, Optional, List, Dict, Any
+from typing import Annotated, Optional, List, Dict, Any, TypeAlias
 from backend.auth.utils import User, get_current_user
-from fastapi import Depends, FastAPI, HTTPException, status, Request, Form
-from backend.mcp.schema import ListToolsResult, Tool
+from fastapi import (
+    Depends,
+    FastAPI,
+    HTTPException,
+    status,
+    Request,
+    Form,
+    Header,
+    Response,
+)
+from fastapi.responses import JSONResponse, StreamingResponse
+from backend.mcp.schema import (
+    ListToolsResult,
+    Tool,
+    JSONRPCRequest,
+    JSONRPCNotification,
+    JSONRPCResponse,
+)
 
 
 def validate_mcp_headers(request: Request):
@@ -21,10 +37,25 @@ async def mcp_get(
     return [{"message": "not implemented"}]
 
 
-@router.post("/mcp")
+JSONRPC: TypeAlias = JSONRPCRequest | JSONRPCNotification | JSONRPCResponse
+
+
+@router.post("/mcp", status_code=202)
 async def mcp_post(
+    request: Request,
+    response: Response,
     current_user: Annotated[User, Depends(get_current_user)],
+    rpc: JSONRPC | List[JSONRPC],
+    accept: Annotated[str | None, Header()] = "application/json, text/event-stream",
 ):
+    if "application/json" in accept and "text/event-stream" in accept:
+        pass
+    else:
+        raise HTTPException(status_code=400, detail="Invalid Accept header")
+
+    if not isinstance(rpc, List):
+        rpc = [rpc]
+
     result = ListToolsResult(
         tools=[
             Tool(
@@ -55,4 +86,19 @@ async def mcp_post(
             ),
         ]
     )
-    return result.model_dump()
+    # return JSONResponse(content=result.model_dump(), media_type="application/json")
+
+    # https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#sending-messages-to-the-server
+    # The SSE stream SHOULD eventually include one JSON-RPC response per each JSON-RPC request sent in the POST body. These responses MAY be batched.
+    async def streaming_response():
+        yield "event: begin\n"
+        for r in rpc:
+            if isinstance(r, JSONRPCRequest):
+                yield "data: " + JSONRPCResponse(
+                    id=r.id, result=result
+                ).model_dump_json(serialize_as_any=True)
+                yield "\n\n"
+        yield "event: end\n"
+        yield "data: {}\n\n"
+
+    return StreamingResponse(streaming_response(), media_type="text/event-stream")
