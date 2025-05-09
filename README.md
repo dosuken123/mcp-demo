@@ -37,7 +37,7 @@ Here is the auth flow:
 1. A user visits the web site. If authorization is not done yet, it's redirected to the authorization server (`GET /authorize` endpoint).
 1. The user logins to the authorization server (`POST /login` endpoint). If it's successful, it's redirected to the callback URL in the frontend (`http://localhost:5173/callback`).
 1. Frontend requests to `POST /token` endpoint to generate an access token (JWT).
-1. Frontend requests to a protected resource endpoint (e.g. `GET /users/me/`)
+1. Frontend requests to the MCP endpoint, either `POST /mcp` or `GET /mcp`.
 
 ## Why should we introduce remote MCP server?
 
