@@ -71,7 +71,7 @@ curl -X POST \
      -d '{
   "jsonrpc": "2.0",
   "id": "1",
-  "method": "listTools",
+  "method": "tools/list",
   "params": {
     "additionalProp1": {}
   }

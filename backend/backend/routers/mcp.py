@@ -18,7 +18,9 @@ from backend.mcp.schema import (
     JSONRPCRequest,
     JSONRPCNotification,
     JSONRPCResponse,
+    JSONRPCError,
 )
+from backend.mcp.process import process_rpc, JSONRPC
 
 
 def validate_mcp_headers(request: Request):
@@ -33,11 +35,20 @@ router = APIRouter(dependencies=[Depends(validate_mcp_headers)])
 @router.get("/mcp")
 async def mcp_get(
     current_user: Annotated[User, Depends(get_current_user)],
+    accept: Annotated[str | None, Header()] = "text/event-stream",
 ):
-    return [{"message": "not implemented"}]
+    if "text/event-stream" in accept:
+        pass
+    else:
+        raise HTTPException(status_code=400, detail="Invalid Accept header")
 
-
-JSONRPC: TypeAlias = JSONRPCRequest | JSONRPCNotification | JSONRPCResponse
+    # https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#sending-messages-to-the-server
+    # Listening for Messages from the Server
+    # The client MAY issue an HTTP GET to the MCP endpoint. This can be used to open an SSE stream, allowing the server to communicate to the client, without the client first sending data via HTTP POST.
+    raise HTTPException(
+        status_code=405,
+        detail="Not implemented: Listening for Messages from the Server",
+    )
 
 
 @router.post("/mcp", status_code=202)
@@ -56,49 +67,29 @@ async def mcp_post(
     if not isinstance(rpc, List):
         rpc = [rpc]
 
-    result = ListToolsResult(
-        tools=[
-            Tool(
-                name="read_user_blog_post",
-                description="Read a blog post that the user wrote",
-                inputSchema={"blog_post_id": {"type": "str"}},
-            ),
-            Tool(
-                name="create_user_blog_post",
-                description="Create a new blog post",
-                inputSchema={
-                    "content": {
-                        "type": "str",
-                        "description": "Content of the blog post",
-                    }
-                },
-            ),
-            Tool(
-                name="update_user_blog_post",
-                description="Update an existing blog post",
-                inputSchema={
-                    "blog_post_id": {"type": "str"},
-                    "new_content": {
-                        "type": "str",
-                        "description": "New content of the blog post",
-                    },
-                },
-            ),
-        ]
-    )
-    # return JSONResponse(content=result.model_dump(), media_type="application/json")
+    responses: List[JSONRPCResponse] = []
+    for r in rpc:
+        try:
+            response = process_rpc(r)
+        except Exception as e:
+            response = JSONRPCError(id=r.id, error={"message": str(e)})
+        responses.append(response)
 
     # https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#sending-messages-to-the-server
     # The SSE stream SHOULD eventually include one JSON-RPC response per each JSON-RPC request sent in the POST body. These responses MAY be batched.
+    # The server MAY send JSON-RPC requests and notifications before sending a JSON-RPC response. These messages SHOULD relate to the originating client request. These requests and notifications MAY be batched.
     async def streaming_response():
         yield "event: begin\n"
-        for r in rpc:
-            if isinstance(r, JSONRPCRequest):
-                yield "data: " + JSONRPCResponse(
-                    id=r.id, result=result
-                ).model_dump_json(serialize_as_any=True)
-                yield "\n\n"
+        for r in responses:
+            yield "data: " + r.model_dump_json(serialize_as_any=True)
+            yield "\n\n"
         yield "event: end\n"
         yield "data: {}\n\n"
 
-    return StreamingResponse(streaming_response(), media_type="text/event-stream")
+    if len(responses) == 1:
+        return JSONResponse(
+            content=responses[0].model_dump(serialize_as_any=True),
+            media_type="application/json",
+        )
+    else:
+        return StreamingResponse(streaming_response(), media_type="text/event-stream")
