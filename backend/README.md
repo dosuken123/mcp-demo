@@ -61,6 +61,8 @@ export BYPASS_AUTH=true
 poetry run fastapi dev backend/main.py --host localhost
 ```
 
+Send a single message:
+
 ```shell
 curl -X POST \
      http://localhost:8000/mcp \
@@ -78,7 +80,7 @@ curl -X POST \
 }'
 ```
 
-or with batching:
+Send a batch messages:
 
 ```shell
 curl -X POST \
@@ -109,6 +111,91 @@ curl -X POST \
     "result": {}
   }
 ]'
+```
+
+### Example: Initialization
+
+https://modelcontextprotocol.io/specification/2025-03-26/basic/lifecycle#initialization
+
+**method: initialize**
+
+```shell
+curl -X POST \
+     http://localhost:8000/mcp \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json, text/event-stream' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+     -d '{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-03-26",
+    "capabilities": {
+      "roots": {
+        "listChanged": true
+      },
+      "sampling": {}
+    },
+    "clientInfo": {
+      "name": "ExampleClient",
+      "version": "1.0.0"
+    }
+  }
+}'
+```
+
+**method: notifications/initialized**
+
+```shell
+curl -X POST \
+     http://localhost:8000/mcp \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json, text/event-stream' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+     -d '{
+  "jsonrpc": "2.0",
+  "method": "notifications/initialized"
+}'
+```
+
+**method: ping**
+
+```shell
+curl -X POST \
+     http://localhost:8000/mcp \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json, text/event-stream' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+     -d '{
+  "jsonrpc": "2.0",
+  "id": "123",
+  "method": "ping"
+}'
+```
+
+### Example: Tool request
+
+**method: tools/list**
+
+```shell
+curl -X POST \
+     http://localhost:8000/mcp \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json, text/event-stream' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+     -d '{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "tools/list",
+  "params": {
+    "additionalProp1": {}
+  }
+}'
 ```
 
 ## Test Login screen

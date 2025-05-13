@@ -7,19 +7,42 @@ from backend.mcp.schema import (
     JSONRPCResponse,
     ClientRequest,
     Result,
+    InitializeResult,
+    EmptyResult,
+    Implementation,
+    ServerCapabilities,
+    ToolsCapabilities,
     InitializeRequest as InitializeRequestBase,
     ListToolsRequest as ListToolsRequestBase,
+    PingRequest as PingRequestBase,
 )
+from backend.auth.utils import User
+from abc import ABC, abstractmethod
+
 
 JSONRPC: TypeAlias = JSONRPCRequest | JSONRPCNotification | JSONRPCResponse
 
 
-class InitializeRequest(InitializeRequestBase):
+class Processable(ABC):
+    user: User  # For authorization and filtering data based on user
+
+    @abstractmethod
+    def process(self) -> Result: ...
+
+
+class InitializeRequest(Processable, InitializeRequestBase):
     def process(self) -> Result:
-        pass
+        # See https://modelcontextprotocol.io/specification/2025-03-26/basic/lifecycle#capability-negotiation
+        # for more capability negotiations
+        return InitializeResult(
+            serverInfo=Implementation(name="My MCP Server", version="0.0.1"),
+            protocolVersion="2025-03-26",
+            capabilities=ServerCapabilities(tools=ToolsCapabilities(listChanged=False)),
+            instructions="Optional instructions for the client",
+        )
 
 
-class ListToolsRequest(ListToolsRequestBase):
+class ListToolsRequest(Processable, ListToolsRequestBase):
     def process(self) -> Result:
         return ListToolsResult(
             tools=[
@@ -53,21 +76,27 @@ class ListToolsRequest(ListToolsRequestBase):
         )
 
 
-def _cast_client_request(rpc: JSONRPCRequest):
-    match rpc.method:
-        case "initialize":
-            return InitializeRequest(**rpc.params)
-        case "tools/list":
-            return ListToolsRequest(**rpc.params)
-        case _:
-            raise ValueError(f"Unknown request method: {rpc.method}")
+class PingRequest(Processable, PingRequestBase):
+    def process(self) -> Result:
+        return EmptyResult()
 
 
-def process_rpc(rpc: JSONRPC):
+def process_rpc(rpc: JSONRPC, user: User):
     if not isinstance(rpc, JSONRPCRequest):
         raise NotImplementedError(f"{rpc.__class__} is not implemented")
 
-    request: ClientRequest = _cast_client_request(rpc)
+    request: ClientRequest = None
+
+    match rpc.method:
+        case "initialize":
+            request = InitializeRequest(user=user, params=rpc.params)
+        case "ping":
+            request = PingRequest(user=user)
+        case "tools/list":
+            request = ListToolsRequest(user=user, **rpc.params)
+        case _:
+            raise ValueError(f"Unknown request method: {rpc.method}")
+
     result: Result = request.process()
 
     return JSONRPCResponse(

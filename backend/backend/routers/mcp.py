@@ -69,11 +69,16 @@ async def mcp_post(
 
     responses: List[JSONRPCResponse] = []
     for r in rpc:
+        response = None
+
         try:
-            response = process_rpc(r)
+            response = process_rpc(r, current_user)
         except Exception as e:
-            response = JSONRPCError(id=r.id, error={"message": str(e)})
-        responses.append(response)
+            if hasattr(r, "id"):
+                response = JSONRPCError(id=r.id, error={"message": str(e)})
+
+        if response:
+            responses.append(response)
 
     # https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#sending-messages-to-the-server
     # The SSE stream SHOULD eventually include one JSON-RPC response per each JSON-RPC request sent in the POST body. These responses MAY be batched.
@@ -81,14 +86,16 @@ async def mcp_post(
     async def streaming_response():
         yield "event: begin\n"
         for r in responses:
-            yield "data: " + r.model_dump_json(serialize_as_any=True)
+            yield "data: " + r.model_dump_json(serialize_as_any=True, exclude_none=True)
             yield "\n\n"
         yield "event: end\n"
         yield "data: {}\n\n"
 
-    if len(responses) == 1:
+    if len(responses) == 0:
+        return JSONResponse(content={}, media_type="application/json")
+    elif len(responses) == 1:
         return JSONResponse(
-            content=responses[0].model_dump(serialize_as_any=True),
+            content=responses[0].model_dump(serialize_as_any=True, exclude_none=True),
             media_type="application/json",
         )
     else:
