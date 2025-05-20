@@ -11,7 +11,6 @@
 ## Start server
 
 ```
-cd backend
 poetry run fastapi dev backend/main.py --host localhost
 ```
 
@@ -177,9 +176,11 @@ curl -X POST \
 }'
 ```
 
-### Example: Tool request
+### Example: Tools
 
-**method: tools/list**
+#### method: tools/list
+
+Request:
 
 ```shell
 curl -X POST \
@@ -196,6 +197,171 @@ curl -X POST \
     "additionalProp1": {}
   }
 }'
+```
+
+Response:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "result": {
+    "tools": [
+      {
+        "name": "read_blog_post",
+        "inputSchema": {
+          "blog_post_id": {
+            "type": "str"
+          }
+        },
+        "description": "Read a blog post that the user wrote"
+      },
+      {
+        "name": "create_blog_post",
+        "inputSchema": {
+          "content": {
+            "type": "str",
+            "description": "Content of the blog post"
+          }
+        },
+        "description": "Create a new blog post"
+      },
+      {
+        "name": "update_blog_post",
+        "inputSchema": {
+          "blog_post_id": {
+            "type": "str"
+          },
+          "new_content": {
+            "type": "str",
+            "description": "New content of the blog post"
+          }
+        },
+        "description": "Update an existing blog post"
+      }
+    ]
+  }
+}
+```
+
+#### method: tools/call
+
+Request `read_blog_post`:
+
+```shell
+curl -X POST \
+     http://localhost:8000/mcp \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json, text/event-stream' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+     -d '{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "read_blog_post",
+    "arguments": {
+      "blog_post_id": 1
+    }
+  }
+}'
+```
+
+Response:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Here is the content of the blog post 1 authored by johndoe\n\nYesterday was a good day"
+      }
+    ]
+  }
+}
+```
+
+Request `create_blog_post`:
+
+```shell
+curl -X POST \
+     http://localhost:8000/mcp \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json, text/event-stream' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+     -d '{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "create_blog_post",
+    "arguments": {
+      "content": "Tomorrow will be a nice day"
+    }
+  }
+}'
+```
+
+Response:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "New blog post 3 is successfully created by johndoe"
+      }
+    ]
+  }
+}
+```
+
+Request `update_blog_post`:
+
+```shell
+curl -X POST \
+     http://localhost:8000/mcp \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json, text/event-stream' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+     -d '{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "update_blog_post",
+    "arguments": {
+      "blog_post_id": 1,
+      "new_content": "Day after tomorrow will be an awesome day"
+    }
+  }
+}'
+```
+
+Response:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Existing blog post 1 is successfully updated by johndoe"
+      }
+    ]
+  }
+}
 ```
 
 ## Test Login screen

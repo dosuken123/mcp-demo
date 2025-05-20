@@ -9,7 +9,6 @@ from backend.auth.utils import (
     verify_client,
     OAUTH_CLIENTS,
     authenticate_user,
-    fake_users_db,
     generate_auth_code,
     auth_code_store,
     Token,
@@ -94,7 +93,7 @@ async def login(
 ):
     """Handle login form submission and create authorization code"""
     # Authenticate user
-    user = authenticate_user(fake_users_db, username, password)
+    user = authenticate_user(username, password)
     if not user:
         # Re-render login form with error
         client_name = OAUTH_CLIENTS[client_id]["client_name"]
@@ -214,7 +213,7 @@ async def token(
 
         # Get user information
         username = code_data["user"]
-        user = get_user(fake_users_db, username)
+        user = get_user(username)
 
         # Create access token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -282,7 +281,7 @@ async def token(
 
         # Get user information
         username = token_data["user_id"]
-        user = get_user(fake_users_db, username)
+        user = get_user(username)
 
         # Create new access token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

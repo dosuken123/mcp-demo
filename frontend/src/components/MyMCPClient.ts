@@ -15,7 +15,7 @@ export interface OAuthConfig {
  */
 export interface ResourceAccessResult {
   success: boolean;
-  userData?: any;
+  toolData?: any;
   error?: string;
 }
 
@@ -41,7 +41,7 @@ export default class MyMCPClient {
       clientId: 'my-mcp-client',
       redirectUri: window.location.origin + '/callback',
       scope: 'read write',
-      resourceEndpoint: 'http://localhost:8000/users/me/',
+      resourceEndpoint: 'http://localhost:8000/mcp',
       ...config
     };
     
@@ -103,11 +103,17 @@ export default class MyMCPClient {
       
       this.accessToken = token;
       const response = await fetch(this.config.resourceEndpoint, {
-        method: 'GET',
+        method: 'POST',
         headers: {
-          'accept': 'application/json',
+          'accept': 'application/json, text/event-stream',
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list'
+        })
       });
       
       if (response.status === 401) {
@@ -123,12 +129,12 @@ export default class MyMCPClient {
         return { success: false };
       }
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data');
+      if (response.status != 202) {
+        throw new Error('Failed to fetch tool data');
       }
       
       const data = await response.json();
-      return { success: true, userData: data };
+      return { success: true, toolData: data };
       
     } catch (error) {
       console.error('Error accessing resource:', error);
@@ -219,9 +225,9 @@ export default class MyMCPClient {
       localStorage.removeItem('oauth_code_verifier');
       localStorage.removeItem('oauth_state');
       
-      // Fetch user data with new token
-      const userData = await this.fetchUserData();
-      return userData;
+      // Fetch tool data with new token
+      const toolData = await this.tryAccessResource();
+      return toolData;
       
     } catch (error) {
       console.error('Token exchange error:', error);
@@ -271,40 +277,6 @@ export default class MyMCPClient {
     } catch (error) {
       console.error('Token refresh error:', error);
       return false;
-    }
-  }
-
-  /**
-   * Fetches user data using current access token
-   * @returns Promise resolving to user data
-   */
-  public async fetchUserData(): Promise<any> {
-    try {
-      const token = this.accessToken || localStorage.getItem('oauth_access_token');
-      
-      if (!token) {
-        throw new Error('No access token available');
-      }
-      
-      const response = await fetch(this.config.resourceEndpoint, {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.detail || data.message || 'Failed to fetch user data');
-      }
-      
-      return data;
-      
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      throw error;
     }
   }
 

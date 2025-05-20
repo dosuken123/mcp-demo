@@ -1,6 +1,5 @@
 from typing import Annotated, Optional, List, Dict, Any, TypeAlias
 from backend.mcp.schema import (
-    ListToolsResult,
     Tool,
     JSONRPCRequest,
     JSONRPCNotification,
@@ -12,11 +11,15 @@ from backend.mcp.schema import (
     Implementation,
     ServerCapabilities,
     ToolsCapabilities,
+    ListToolsResult,
+    CallToolResult,
+    TextContent,
     InitializeRequest as InitializeRequestBase,
     ListToolsRequest as ListToolsRequestBase,
+    CallToolRequest as CallToolRequestBase,
     PingRequest as PingRequestBase,
 )
-from backend.auth.utils import User
+from backend.auth.utils import User, db_in_memory
 from abc import ABC, abstractmethod
 
 
@@ -47,12 +50,12 @@ class ListToolsRequest(Processable, ListToolsRequestBase):
         return ListToolsResult(
             tools=[
                 Tool(
-                    name="read_user_blog_post",
+                    name="read_blog_post",
                     description="Read a blog post that the user wrote",
                     inputSchema={"blog_post_id": {"type": "str"}},
                 ),
                 Tool(
-                    name="create_user_blog_post",
+                    name="create_blog_post",
                     description="Create a new blog post",
                     inputSchema={
                         "content": {
@@ -62,7 +65,7 @@ class ListToolsRequest(Processable, ListToolsRequestBase):
                     },
                 ),
                 Tool(
-                    name="update_user_blog_post",
+                    name="update_blog_post",
                     description="Update an existing blog post",
                     inputSchema={
                         "blog_post_id": {"type": "str"},
@@ -73,6 +76,87 @@ class ListToolsRequest(Processable, ListToolsRequestBase):
                     },
                 ),
             ]
+        )
+
+
+class CallToolRequest(Processable, CallToolRequestBase):
+    def process(self) -> Result:
+        if self.params.name == "read_blog_post":
+            return self.read_blog_post()
+        elif self.params.name == "create_blog_post":
+            return self.create_blog_post()
+        elif self.params.name == "update_blog_post":
+            return self.update_blog_post()
+        else:
+            raise ValueError(f"Tool name {self.params.name} not Found")
+
+    def read_blog_post(self):
+        blog_post_id = int(self.params.arguments["blog_post_id"])
+
+        for blog_post_dict in db_in_memory["blog_posts"]:
+            if (
+                blog_post_dict["user_id"] == self.user.id
+                and blog_post_dict["id"] == blog_post_id
+            ):
+                return CallToolResult(
+                    content=[
+                        TextContent(
+                            text=f"Here is the content of the blog post {blog_post_id} authored by {self.user.username}\n\n{blog_post_dict['content']}"
+                        )
+                    ],
+                )
+
+        return CallToolResult(
+            content=[
+                TextContent(
+                    text=f"Blog post {blog_post_id} not found for user {self.user.id}"
+                )
+            ],
+            isError=True,
+        )
+
+    def create_blog_post(self):
+        new_blog_post_id = len(db_in_memory["blog_posts"]) + 1
+        blog_post_dict = {
+            "id": new_blog_post_id,
+            "user_id": self.user.id,
+            "content": self.params.arguments["content"],
+        }
+        db_in_memory["blog_posts"].append(blog_post_dict)
+
+        return CallToolResult(
+            content=[
+                TextContent(
+                    text=f"New blog post {new_blog_post_id} is successfully created by {self.user.username}"
+                )
+            ]
+        )
+
+    def update_blog_post(self):
+        blog_post_id = int(self.params.arguments["blog_post_id"])
+
+        for blog_post_dict in db_in_memory["blog_posts"]:
+            if (
+                blog_post_dict["user_id"] == self.user.id
+                and blog_post_dict["id"] == blog_post_id
+            ):
+                blog_post_dict["content"] = self.params.arguments["new_content"]
+
+                return CallToolResult(
+                    content=[
+                        TextContent(
+                            text=f"Existing blog post {blog_post_id} is successfully updated by {self.user.username}"
+                        )
+                    ],
+                )
+
+        return CallToolResult(
+            content=[
+                TextContent(
+                    text=f"Blog post {blog_post_id} not found for user {self.user.id}"
+                )
+            ],
+            isError=True,
         )
 
 
@@ -93,7 +177,9 @@ def process_rpc(rpc: JSONRPC, user: User):
         case "ping":
             request = PingRequest(user=user)
         case "tools/list":
-            request = ListToolsRequest(user=user, **rpc.params)
+            request = ListToolsRequest(user=user, params=rpc.params)
+        case "tools/call":
+            request = CallToolRequest(user=user, params=rpc.params)
         case _:
             raise ValueError(f"Unknown request method: {rpc.method}")
 
