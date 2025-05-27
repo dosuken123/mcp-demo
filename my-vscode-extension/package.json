@@ -9,13 +9,27 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:javascript"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "my-vscode-extension.helloWorld",
-        "title": "Hello World"
+        "title": "Hey World"
+      },
+      {
+        "command": "my-vscode-extension.showCurrentTime",
+        "title": "Show Current time"
+      },
+      {
+        "command": "my-vscode-extension.commentOut",
+        "title": "Comment out"
+      },
+      {
+        "command": "my-vscode-extension.printDefs",
+        "title": "Print definitions"
       }
     ]
   },
