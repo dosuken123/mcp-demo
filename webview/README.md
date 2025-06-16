@@ -1,4 +1,4 @@
-# frontend
+# Webview
 
 This template should help get you started developing with Vue 3 in Vite.
 
@@ -23,6 +23,12 @@ npm run dev
 ```
 
 ### Compile and Minify for Production
+
+```sh
+npm run build
+```
+
+### Compile app and export it for chat-extension
 
 ```sh
 npm run build

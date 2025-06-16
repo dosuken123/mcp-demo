@@ -17,7 +17,26 @@
         "command": "chat-extension.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "chat-extension-chat-view-container",
+          "icon": "assets/icon.svg",
+          "title": "Chat with MCP"
+        }
+      ]
+    },
+    "views": {
+      "chat-extension-chat-view-container": [
+        {
+          "type": "webview",
+          "id": "chat-extension.chat-view",
+          "name": "Chat with MCP",
+          "icon": "assets/icon.svg"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
