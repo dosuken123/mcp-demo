@@ -2,7 +2,7 @@
 
 The following command compiles the src and output it to `out` folder:
 
-```
+```shell
 npm run watch
 ```
 

@@ -14,6 +14,8 @@ import {
 
 let client: LanguageClient;
 
+const log = vscode.window.createOutputChannel('Chat Extension', { log: true });
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -105,11 +107,17 @@ function startLanguageServer(context: vscode.ExtensionContext) {
 
 	// Create the language client and start the client.
 	client = new LanguageClient(
-		'languageServerExample',
-		'Language Server Example',
+		'languageServerForChatExtension',
+		'Language Server for chat extension',
 		serverOptions,
 		clientOptions
 	);
+
+	// client.onNotification('custom/mynotification', (name: string) => {
+	// 	log.info(`name: ${name}`);
+
+	// 	client.sendNotification('custom/mynotification2', name);
+	// });
 
 	// Start the client. This will also launch the server
 	client.start();
