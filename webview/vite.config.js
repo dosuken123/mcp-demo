@@ -16,7 +16,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../chat-extension/out/webview',
+    outDir: 'public',
     emptyOutDir: true,
   },
   // Setting the relative URL (`./`) for loading html and associated asset files (e.g. `./assets/index-CWBTEL-2.js`).

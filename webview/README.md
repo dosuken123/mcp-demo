@@ -22,13 +22,7 @@ npm install
 npm run dev
 ```
 
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Compile app and export it for chat-extension
+### Compile and Minify for Production and chat-extension
 
 ```sh
 npm run build
