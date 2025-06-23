@@ -30,6 +30,12 @@ function start_webview_http_server() {
     root: path.join(__dirname, "../../webview", "public"),
   });
 
+  // `/callback` path is called from backend server for OAuth2.1.
+  // Loading index.html where has the handling logic for the callback.
+  fastify.get('/callback', function (req, reply) {
+    reply.sendFile('index.html');
+  });
+
   // Run the server!
   fastify.listen({ port: WEBVIEW_HTTP_SERVER_PORT }, function (err, address) {
     if (err) {

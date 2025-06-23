@@ -49,7 +49,7 @@ async def authorize(
 
     if not verify_client(client_id, redirect_uri):
         return HTMLResponse(
-            content="Invalid client ID or redirect URI", status_code=400
+            content=f"Invalid client ID or redirect URI. client_id: {client_id} redirect_uri: {redirect_uri}", status_code=400
         )
 
     if not code_challenge and code_challenge_method != "none":
