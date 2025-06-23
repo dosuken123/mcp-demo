@@ -12,6 +12,9 @@ import fastifyCors from "@fastify/cors";
 import * as path from "path";
 
 const WEBVIEW_HTTP_SERVER_PORT = 41648
+let webviewHttpServerReady = false;
+let webviewHttpServerCheckInterval;
+let webviewHttpServerAddress = "";
 
 function start_webview_http_server() {
   const fastify = Fastify({
@@ -33,7 +36,11 @@ function start_webview_http_server() {
       fastify.log.error(err);
       process.exit(1);
     }
-    // Server is now listening on ${address}
+    webviewHttpServerAddress = address;
+  });
+
+  fastify.ready(() => {
+    webviewHttpServerReady = true;
   });
 }
 
@@ -58,13 +65,17 @@ const documents = new TextDocuments(TextDocument);
 // Handlers for text documents:
 // documents.onDidClose();
 
-connection.onInitialized(() => {
-  console.log("Initialized");
-  connection.sendNotification("custom/mynotification", "hogehogehoge");
-});
+// A handler for the initialized notification.
+connection.onInitialized((param) => {
+  console.log("Received `initialized` notification from client:", param);
 
-connection.onNotification("custom/mynotification2", (param) => {
-  console.log("Received notification!?:", param);
+  webviewHttpServerCheckInterval = setInterval(() => {
+    console.log("webviewHttpServerCheckInterval: ready?", webviewHttpServerReady);
+    if (webviewHttpServerReady) {
+      connection.sendNotification("http_server_ready", {"address": webviewHttpServerAddress});
+      clearInterval(webviewHttpServerCheckInterval);
+    }
+  }, 100);
 });
 
 // Make the text document manager listen on the connection

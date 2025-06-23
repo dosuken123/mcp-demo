@@ -21,11 +21,6 @@ const log = vscode.window.createOutputChannel("Chat Extension", { log: true });
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   startLanguageServer(context);
-
-  // Waiting for language server and webview http server booting in order to load the webview in iframe 
-  setTimeout(() => {
-    setupExtension(context);
-  }, 1000);
 }
 
 // This method is called when your extension is deactivated
@@ -36,8 +31,8 @@ export function deactivate() {
   return client.stop();
 }
 
-function setupExtension(context: vscode.ExtensionContext) {
-  const provider = new ChatViewProvider(context.extensionUri);
+function setupWebviewComponent(context: vscode.ExtensionContext, param: any) {
+  const provider = new ChatViewProvider(context.extensionUri, param["address"]);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       ChatViewProvider.viewType,
@@ -51,7 +46,10 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 
   private _view?: vscode.WebviewView;
 
-  constructor(private readonly _extensionUri: vscode.Uri) {}
+  constructor(
+    private readonly _extensionUri: vscode.Uri,
+    private readonly _webviewHttpServerUri: string
+  ) {}
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -80,10 +78,8 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   private _getHtmlForWebview() {
-    const webviewHttpServerUrl = "http://127.0.0.1:41648";
-
     const html = `
-		<iframe src="${webviewHttpServerUrl}/" style="width:100%;min-height:500px;max-height:1000px;top:0px;left:0px;position:absolute;border:none;"></iframe>
+		<iframe src="${this._webviewHttpServerUri}/" style="width:100%;min-height:500px;max-height:1000px;top:0px;left:0px;position:absolute;border:none;"></iframe>
 		`;
 
     return html;
@@ -124,10 +120,9 @@ function startLanguageServer(context: vscode.ExtensionContext) {
     clientOptions
   );
 
-  client.onNotification("custom/mynotification", (name: string) => {
-    log.info(`name: ${name}`);
-
-    client.sendNotification("custom/mynotification2", name);
+  client.onNotification("http_server_ready", (param) => {
+    log.info(`Received 'http_server_ready' notification param: ${param}`);
+    setupWebviewComponent(context, param);
   });
 
   // Start the client. This will also launch the server
