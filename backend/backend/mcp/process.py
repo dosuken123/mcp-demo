@@ -35,11 +35,11 @@ class Processable(ABC):
 
 class InitializeRequest(Processable, InitializeRequestBase):
     def process(self) -> Result:
-        # See https://modelcontextprotocol.io/specification/2025-03-26/basic/lifecycle#capability-negotiation
+        # See https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle#capability-negotiation
         # for more capability negotiations
         return InitializeResult(
             serverInfo=Implementation(name="My MCP Server", version="0.0.1"),
-            protocolVersion="2025-03-26",
+            protocolVersion="2025-06-18",
             capabilities=ServerCapabilities(tools=ToolsCapabilities(listChanged=False)),
             instructions="Optional instructions for the client",
         )

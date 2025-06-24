@@ -28,15 +28,15 @@ JSONRPCRequest(id="1", method="test", params={"a": "b"})
 
 ## Regenerate MCP JSONRPC 2.0 schema
 
-MCP provides the [schema](https://modelcontextprotocol.io/specification/2025-03-26/basic#schema) for server-client communication.
-This schema is provided as [typescript](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2025-03-26/schema.ts) as single source of truth,
-and [JSON](https://github.com/modelcontextprotocol/specification/blob/main/schema/2025-03-26/schema.json) as auto-converted version.
+MCP provides the [schema](https://modelcontextprotocol.io/specification/2025-06-18/basic#schema) for server-client communication.
+This schema is provided as [typescript](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2025-06-18/schema.ts) as single source of truth,
+and [JSON](https://github.com/modelcontextprotocol/specification/blob/main/schema/2025-06-18/schema.json) as auto-converted version.
 
 You can convert the JSON schema into python module by the following script:
 
 ```shell
 export ANTHROPIC_API_KEY=[REDACTED]
-export JSON_SCHEMA_URL=https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/2025-03-26/schema.json
+export JSON_SCHEMA_URL=https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/2025-06-18/schema.json
 
 make schema
 ```
@@ -114,7 +114,7 @@ curl -X POST \
 
 ### Example: Initialization
 
-https://modelcontextprotocol.io/specification/2025-03-26/basic/lifecycle#initialization
+https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle#initialization
 
 **method: initialize**
 
@@ -130,7 +130,7 @@ curl -X POST \
   "id": 1,
   "method": "initialize",
   "params": {
-    "protocolVersion": "2025-03-26",
+    "protocolVersion": "2025-06-18",
     "capabilities": {
       "roots": {
         "listChanged": true

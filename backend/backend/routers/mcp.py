@@ -42,7 +42,7 @@ async def mcp_get(
     else:
         raise HTTPException(status_code=400, detail="Invalid Accept header. Client must accept text/event-stream.")
 
-    # https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#sending-messages-to-the-server
+    # https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#sending-messages-to-the-server
     # Listening for Messages from the Server
     # The client MAY issue an HTTP GET to the MCP endpoint. This can be used to open an SSE stream, allowing the server to communicate to the client, without the client first sending data via HTTP POST.
     raise HTTPException(
@@ -80,7 +80,7 @@ async def mcp_post(
         if response:
             responses.append(response)
 
-    # https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#sending-messages-to-the-server
+    # https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#sending-messages-to-the-server
     # The SSE stream SHOULD eventually include one JSON-RPC response per each JSON-RPC request sent in the POST body. These responses MAY be batched.
     # The server MAY send JSON-RPC requests and notifications before sending a JSON-RPC response. These messages SHOULD relate to the originating client request. These requests and notifications MAY be batched.
     async def streaming_response():

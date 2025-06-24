@@ -1,4 +1,4 @@
-# This file is auto-generated based on https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/2025-03-26/schema.json - do not modify manually.
+# This file is auto-generated based on https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/2025-06-18/schema.json - do not modify manually.
 
 from enum import StrEnum
 from typing import Any, Dict, List, Optional, Literal, Union, TypeAlias
@@ -49,6 +49,10 @@ class Annotations(BaseModel):
         ge=0,
         le=1,
     )
+    lastModified: Optional[str] = Field(
+        None,
+        description='The moment the resource was last modified, as an ISO 8601 formatted string.\n\nShould be an ISO 8601 formatted string (e.g., "2025-01-12T15:00:58Z").\n\nExamples: last activity timestamp in an open file, timestamp when the resource\nwas attached, etc.',
+    )
 
 
 class TextContent(BaseModel):
@@ -59,6 +63,7 @@ class TextContent(BaseModel):
     annotations: Optional[Annotations] = Field(
         None, description="Optional annotations for the client."
     )
+    _meta: Optional[Dict[str, Any]] = None
 
 
 class ImageContent(BaseModel):
@@ -72,6 +77,7 @@ class ImageContent(BaseModel):
     annotations: Optional[Annotations] = Field(
         None, description="Optional annotations for the client."
     )
+    _meta: Optional[Dict[str, Any]] = None
 
 
 class AudioContent(BaseModel):
@@ -85,6 +91,7 @@ class AudioContent(BaseModel):
     annotations: Optional[Annotations] = Field(
         None, description="Optional annotations for the client."
     )
+    _meta: Optional[Dict[str, Any]] = None
 
 
 class TextResourceContents(BaseModel):
@@ -95,6 +102,7 @@ class TextResourceContents(BaseModel):
     mimeType: Optional[str] = Field(
         None, description="The MIME type of this resource, if known."
     )
+    _meta: Optional[Dict[str, Any]] = None
 
 
 class BlobResourceContents(BaseModel):
@@ -105,6 +113,38 @@ class BlobResourceContents(BaseModel):
     mimeType: Optional[str] = Field(
         None, description="The MIME type of this resource, if known."
     )
+    _meta: Optional[Dict[str, Any]] = None
+
+
+class ResourceLink(BaseModel):
+    """A resource that the server is capable of reading, included in a prompt or tool call result.
+
+    Note: resource links returned by tools are not guaranteed to appear in the results of `resources/list` requests."""
+
+    type: Literal["resource_link"] = "resource_link"
+    name: str = Field(
+        description="Intended for programmatic or logical use, but used as a display name in past specs or fallback (if title isn't present)."
+    )
+    uri: str = Field(description="The URI of this resource.")
+    title: Optional[str] = Field(
+        None,
+        description="Intended for UI and end-user contexts — optimized to be human-readable and easily understood,\neven by those unfamiliar with domain-specific terminology.\n\nIf not provided, the name should be used for display (except for Tool,\nwhere `annotations.title` should be given precedence over using `name`,\nif present).",
+    )
+    description: Optional[str] = Field(
+        None,
+        description='A description of what this resource represents.\n\nThis can be used by clients to improve the LLM\'s understanding of available resources. It can be thought of like a "hint" to the model.',
+    )
+    mimeType: Optional[str] = Field(
+        None, description="The MIME type of this resource, if known."
+    )
+    size: Optional[int] = Field(
+        None,
+        description="The size of the raw resource content, in bytes (i.e., before base64 encoding or any tokenization), if known.\n\nThis can be used by Hosts to display file sizes and estimate context window usage.",
+    )
+    annotations: Optional[Annotations] = Field(
+        None, description="Optional annotations for the client."
+    )
+    _meta: Optional[Dict[str, Any]] = None
 
 
 class EmbeddedResource(BaseModel):
@@ -118,6 +158,11 @@ class EmbeddedResource(BaseModel):
     annotations: Optional[Annotations] = Field(
         None, description="Optional annotations for the client."
     )
+    _meta: Optional[Dict[str, Any]] = None
+
+
+class ContentBlock(BaseModel):
+    pass  # This is just a placeholder for Union[TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource]
 
 
 class SamplingMessage(BaseModel):
@@ -134,14 +179,70 @@ class PromptMessage(BaseModel):
     resources from the MCP server."""
 
     role: Role
-    content: Union[TextContent, ImageContent, AudioContent, EmbeddedResource]
+    content: Union[TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource]
+
+
+class BaseMetadata(BaseModel):
+    """Base interface for metadata with name (identifier) and title (display name) properties."""
+
+    name: str = Field(
+        description="Intended for programmatic or logical use, but used as a display name in past specs or fallback (if title isn't present)."
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Intended for UI and end-user contexts — optimized to be human-readable and easily understood,\neven by those unfamiliar with domain-specific terminology.\n\nIf not provided, the name should be used for display (except for Tool,\nwhere `annotations.title` should be given precedence over using `name`,\nif present).",
+    )
 
 
 class Implementation(BaseModel):
-    """Describes the name and version of an MCP implementation."""
+    """Describes the name and version of an MCP implementation, with an optional title for UI representation."""
 
-    name: str
+    name: str = Field(
+        description="Intended for programmatic or logical use, but used as a display name in past specs or fallback (if title isn't present)."
+    )
     version: str
+    title: Optional[str] = Field(
+        None,
+        description="Intended for UI and end-user contexts — optimized to be human-readable and easily understood,\neven by those unfamiliar with domain-specific terminology.\n\nIf not provided, the name should be used for display (except for Tool,\nwhere `annotations.title` should be given precedence over using `name`,\nif present).",
+    )
+
+
+class StringSchema(BaseModel):
+    type: Literal["string"] = "string"
+    title: Optional[str] = None
+    description: Optional[str] = None
+    minLength: Optional[int] = None
+    maxLength: Optional[int] = None
+    format: Optional[Literal["date", "date-time", "email", "uri"]] = None
+
+
+class NumberSchema(BaseModel):
+    type: Literal["integer", "number"]
+    title: Optional[str] = None
+    description: Optional[str] = None
+    minimum: Optional[int] = None
+    maximum: Optional[int] = None
+
+
+class BooleanSchema(BaseModel):
+    type: Literal["boolean"] = "boolean"
+    title: Optional[str] = None
+    description: Optional[str] = None
+    default: Optional[bool] = None
+
+
+class EnumSchema(BaseModel):
+    type: Literal["string"] = "string"
+    title: Optional[str] = None
+    description: Optional[str] = None
+    enum: List[str]
+    enumNames: Optional[List[str]] = None
+
+
+class PrimitiveSchemaDefinition(BaseModel):
+    """Restricted schema definitions that only allow primitive types
+    without nested objects or arrays."""
+    pass
 
 
 # Capabilities models
@@ -156,6 +257,10 @@ class SamplingCapabilities(BaseModel):
     pass  # No additional properties defined in the schema
 
 
+class ElicitationCapabilities(BaseModel):
+    pass  # No additional properties defined in the schema
+
+
 class ClientCapabilities(BaseModel):
     """Capabilities a client may support. Known capabilities are defined here, in this schema, but this is not a closed set: any client can define its own, additional capabilities."""
 
@@ -164,6 +269,9 @@ class ClientCapabilities(BaseModel):
     )
     sampling: Optional[SamplingCapabilities] = Field(
         None, description="Present if the client supports sampling from an LLM."
+    )
+    elicitation: Optional[ElicitationCapabilities] = Field(
+        None, description="Present if the client supports elicitation from the server."
     )
     experimental: Optional[Dict[str, Dict[str, Any]]] = Field(
         None,
@@ -235,9 +343,13 @@ class Resource(BaseModel):
     """A known resource that the server is capable of reading."""
 
     name: str = Field(
-        description="A human-readable name for this resource.\n\nThis can be used by clients to populate UI elements."
+        description="Intended for programmatic or logical use, but used as a display name in past specs or fallback (if title isn't present)."
     )
     uri: str = Field(description="The URI of this resource.")
+    title: Optional[str] = Field(
+        None,
+        description="Intended for UI and end-user contexts — optimized to be human-readable and easily understood,\neven by those unfamiliar with domain-specific terminology.\n\nIf not provided, the name should be used for display (except for Tool,\nwhere `annotations.title` should be given precedence over using `name`,\nif present).",
+    )
     description: Optional[str] = Field(
         None,
         description='A description of what this resource represents.\n\nThis can be used by clients to improve the LLM\'s understanding of available resources. It can be thought of like a "hint" to the model.',
@@ -252,16 +364,21 @@ class Resource(BaseModel):
     annotations: Optional[Annotations] = Field(
         None, description="Optional annotations for the client."
     )
+    _meta: Optional[Dict[str, Any]] = None
 
 
 class ResourceTemplate(BaseModel):
     """A template description for resources available on the server."""
 
     name: str = Field(
-        description="A human-readable name for the type of resource this template refers to.\n\nThis can be used by clients to populate UI elements."
+        description="Intended for programmatic or logical use, but used as a display name in past specs or fallback (if title isn't present)."
     )
     uriTemplate: str = Field(
         description="A URI template (according to RFC 6570) that can be used to construct resource URIs."
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Intended for UI and end-user contexts — optimized to be human-readable and easily understood,\neven by those unfamiliar with domain-specific terminology.\n\nIf not provided, the name should be used for display (except for Tool,\nwhere `annotations.title` should be given precedence over using `name`,\nif present).",
     )
     description: Optional[str] = Field(
         None,
@@ -274,9 +391,10 @@ class ResourceTemplate(BaseModel):
     annotations: Optional[Annotations] = Field(
         None, description="Optional annotations for the client."
     )
+    _meta: Optional[Dict[str, Any]] = None
 
 
-class ResourceReference(BaseModel):
+class ResourceTemplateReference(BaseModel):
     """A reference to a resource or resource template definition."""
 
     type: Literal["ref/resource"] = "ref/resource"
@@ -293,13 +411,20 @@ class Root(BaseModel):
         None,
         description="An optional name for the root. This can be used to provide a human-readable\nidentifier for the root, which may be useful for display purposes or for\nreferencing the root in other parts of the application.",
     )
+    _meta: Optional[Dict[str, Any]] = None
 
 
 # Prompt models
 class PromptArgument(BaseModel):
     """Describes an argument that a prompt can accept."""
 
-    name: str = Field(description="The name of the argument.")
+    name: str = Field(
+        description="Intended for programmatic or logical use, but used as a display name in past specs or fallback (if title isn't present)."
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Intended for UI and end-user contexts — optimized to be human-readable and easily understood,\neven by those unfamiliar with domain-specific terminology.\n\nIf not provided, the name should be used for display (except for Tool,\nwhere `annotations.title` should be given precedence over using `name`,\nif present).",
+    )
     description: Optional[str] = Field(
         None, description="A human-readable description of the argument."
     )
@@ -311,20 +436,33 @@ class PromptArgument(BaseModel):
 class Prompt(BaseModel):
     """A prompt or prompt template that the server offers."""
 
-    name: str = Field(description="The name of the prompt or prompt template.")
+    name: str = Field(
+        description="Intended for programmatic or logical use, but used as a display name in past specs or fallback (if title isn't present)."
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Intended for UI and end-user contexts — optimized to be human-readable and easily understood,\neven by those unfamiliar with domain-specific terminology.\n\nIf not provided, the name should be used for display (except for Tool,\nwhere `annotations.title` should be given precedence over using `name`,\nif present).",
+    )
     description: Optional[str] = Field(
         None, description="An optional description of what this prompt provides"
     )
     arguments: Optional[List[PromptArgument]] = Field(
         None, description="A list of arguments to use for templating the prompt."
     )
+    _meta: Optional[Dict[str, Any]] = None
 
 
 class PromptReference(BaseModel):
     """Identifies a prompt."""
 
     type: Literal["ref/prompt"] = "ref/prompt"
-    name: str = Field(description="The name of the prompt or prompt template")
+    name: str = Field(
+        description="Intended for programmatic or logical use, but used as a display name in past specs or fallback (if title isn't present)."
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Intended for UI and end-user contexts — optimized to be human-readable and easily understood,\neven by those unfamiliar with domain-specific terminology.\n\nIf not provided, the name should be used for display (except for Tool,\nwhere `annotations.title` should be given precedence over using `name`,\nif present).",
+    )
 
 
 # Tool models
@@ -362,17 +500,29 @@ class ToolAnnotations(BaseModel):
 class Tool(BaseModel):
     """Definition for a tool the client can call."""
 
-    name: str = Field(description="The name of the tool.")
+    name: str = Field(
+        description="Intended for programmatic or logical use, but used as a display name in past specs or fallback (if title isn't present)."
+    )
     inputSchema: Dict[str, Any] = Field(
         description="A JSON Schema object defining the expected parameters for the tool."
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Intended for UI and end-user contexts — optimized to be human-readable and easily understood,\neven by those unfamiliar with domain-specific terminology.\n\nIf not provided, the name should be used for display (except for Tool,\nwhere `annotations.title` should be given precedence over using `name`,\nif present).",
     )
     description: Optional[str] = Field(
         None,
         description='A human-readable description of the tool.\n\nThis can be used by clients to improve the LLM\'s understanding of available tools. It can be thought of like a "hint" to the model.',
     )
-    annotations: Optional[ToolAnnotations] = Field(
-        None, description="Optional additional tool information."
+    outputSchema: Optional[Dict[str, Any]] = Field(
+        None,
+        description="An optional JSON Schema object defining the structure of the tool's output returned in\nthe structuredContent field of a CallToolResult.",
     )
+    annotations: Optional[ToolAnnotations] = Field(
+        None,
+        description="Optional additional tool information.\n\nDisplay name precedence order is: title, annotations.title, then name.",
+    )
+    _meta: Optional[Dict[str, Any]] = None
 
 
 # Model preferences models
@@ -384,7 +534,7 @@ class ModelHint(BaseModel):
 
     name: Optional[str] = Field(
         None,
-        description="A hint for a model name.\n\nThe client SHOULD treat this as a substring of a model name; for example:\n - `claude-3-5-sonnet` should match `claude-3-5-sonnet-20241022`\n - `sonnet` should match `claude-3-5-sonnet-20241022`, `claude-3-sonnet-20240229`, etc.\n - `claude` should match any Claude model\n\nThe client MAY also map the string to a different provider's model name or a different model family, as long as it fills a similar niche; for example:\n - `gemini-1.5-flash` could match `claude-3-haiku-20240307`",
+        description='A hint for a model name.\n\nThe client SHOULD treat this as a substring of a model name; for example:\n - `claude-3-5-sonnet` should match `claude-3-5-sonnet-20241022`\n - `sonnet` should match `claude-3-5-sonnet-20241022`, `claude-3-sonnet-20240229`, etc.\n - `claude` should match any Claude model\n\nThe client MAY also map the string to a different provider\'s model name or a different model family, as long as it fills a similar niche; for example:\n - `gemini-1.5-flash` could match `claude-3-haiku-20240307`',
     )
 
 
@@ -542,8 +692,7 @@ class ListRootsRequest(BaseModel):
     on.
 
     This request is typically used when the server needs to understand the file system
-    structure or access specific locations that the client has permission to read from.
-    """
+    structure or access specific locations that the client has permission to read from."""
 
     method: Literal["roots/list"] = "roots/list"
     params: Optional[ListRootsRequestParams] = None
@@ -564,8 +713,7 @@ class RootsListChangedNotificationParams(BaseModel):
 class RootsListChangedNotification(BaseModel):
     """A notification from the client to the server, informing it that the list of roots has changed.
     This notification should be sent whenever the client adds, removes, or modifies any root.
-    The server should then request an updated list of roots using the ListRootsRequest.
-    """
+    The server should then request an updated list of roots using the ListRootsRequest."""
 
     method: Literal["notifications/roots/list_changed"] = (
         "notifications/roots/list_changed"
@@ -802,21 +950,15 @@ class CallToolRequest(BaseModel):
 
 
 class CallToolResult(Result):
-    """The server's response to a tool call.
+    """The server's response to a tool call."""
 
-    Any errors that originate from the tool SHOULD be reported inside the result
-    object, with `isError` set to true, _not_ as an MCP protocol-level error
-    response. Otherwise, the LLM would not be able to see that an error occurred
-    and self-correct.
-
-    However, any errors in _finding_ the tool, an error indicating that the
-    server does not support tool calls, or any other exceptional conditions,
-    should be reported as an MCP error response."""
-
-    content: List[Union[TextContent, ImageContent, AudioContent, EmbeddedResource]]
+    content: List[Union[TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource]]
+    structuredContent: Optional[Dict[str, Any]] = Field(
+        None, description="An optional JSON object that represents the structured result of the tool call."
+    )
     isError: Optional[bool] = Field(
         None,
-        description="Whether the tool call ended in an error.\n\nIf not set, this is assumed to be false (the call was successful).",
+        description="Whether the tool call ended in an error.\n\nIf not set, this is assumed to be false (the call was successful).\n\nAny errors that originate from the tool SHOULD be reported inside the result\nobject, with `isError` set to true, _not_ as an MCP protocol-level error\nresponse. Otherwise, the LLM would not be able to see that an error occurred\nand self-correct.\n\nHowever, any errors in _finding_ the tool, an error indicating that the\nserver does not support tool calls, or any other exceptional conditions,\nshould be reported as an MCP error response.",
     )
 
 
@@ -893,6 +1035,32 @@ class CreateMessageResult(Result):
     )
 
 
+class ElicitRequestParams(BaseModel):
+    message: str = Field(description="The message to present to the user.")
+    requestedSchema: Dict[str, Any] = Field(
+        description="A restricted subset of JSON Schema.\nOnly top-level properties are allowed, without nesting."
+    )
+
+
+class ElicitRequest(BaseModel):
+    """A request from the server to elicit additional information from the user via the client."""
+
+    method: Literal["elicitation/create"] = "elicitation/create"
+    params: ElicitRequestParams
+
+
+class ElicitResult(Result):
+    """The client's response to an elicitation request."""
+
+    action: Literal["accept", "decline", "cancel"] = Field(
+        description='The user action in response to the elicitation.\n- "accept": User submitted the form/confirmed the action\n- "decline": User explicitly declined the action\n- "cancel": User dismissed without making an explicit choice'
+    )
+    content: Optional[Dict[str, Union[str, int, bool]]] = Field(
+        None,
+        description='The submitted form data, only present when action is "accept".\nContains values matching the requested schema.',
+    )
+
+
 class CompleteRequestArgumentParams(BaseModel):
     name: str = Field(description="The name of the argument")
     value: str = Field(
@@ -900,10 +1068,19 @@ class CompleteRequestArgumentParams(BaseModel):
     )
 
 
+class CompleteRequestContextParams(BaseModel):
+    arguments: Optional[Dict[str, str]] = Field(
+        None, description="Previously-resolved variables in a URI template or prompt."
+    )
+
+
 class CompleteRequestParams(BaseModel):
-    ref: Union[PromptReference, ResourceReference]
+    ref: Union[PromptReference, ResourceTemplateReference]
     argument: CompleteRequestArgumentParams = Field(
         description="The argument's information"
+    )
+    context: Optional[CompleteRequestContextParams] = Field(
+        None, description="Additional, optional context for completions"
     )
 
 
@@ -968,24 +1145,18 @@ class JSONRPCError(BaseModel):
     error: Dict[str, Any]
 
 
-JSONRPCBatchRequest: TypeAlias = List[Union[JSONRPCRequest, JSONRPCNotification]]
-JSONRPCBatchResponse: TypeAlias = List[Union[JSONRPCResponse, JSONRPCError]]
+# Type aliases for unions
 JSONRPCMessage: TypeAlias = Union[
-    JSONRPCRequest,
-    JSONRPCNotification,
-    List[Union[JSONRPCRequest, JSONRPCNotification]],
-    JSONRPCResponse,
-    JSONRPCError,
-    List[Union[JSONRPCResponse, JSONRPCError]],
+    JSONRPCRequest, JSONRPCNotification, JSONRPCResponse, JSONRPCError
 ]
 
-# Union types for notifications and requests
 ClientNotification: TypeAlias = Union[
     CancelledNotification,
     InitializedNotification,
     ProgressNotification,
     RootsListChangedNotification,
 ]
+
 ClientRequest: TypeAlias = Union[
     InitializeRequest,
     PingRequest,
@@ -1001,7 +1172,11 @@ ClientRequest: TypeAlias = Union[
     SetLevelRequest,
     CompleteRequest,
 ]
-ClientResult: TypeAlias = Union[Result, CreateMessageResult, ListRootsResult]
+
+ClientResult: TypeAlias = Union[
+    Result, CreateMessageResult, ListRootsResult, ElicitResult
+]
+
 ServerNotification: TypeAlias = Union[
     CancelledNotification,
     ProgressNotification,
@@ -1011,7 +1186,11 @@ ServerNotification: TypeAlias = Union[
     ToolListChangedNotification,
     LoggingMessageNotification,
 ]
-ServerRequest: TypeAlias = Union[PingRequest, CreateMessageRequest, ListRootsRequest]
+
+ServerRequest: TypeAlias = Union[
+    PingRequest, CreateMessageRequest, ListRootsRequest, ElicitRequest
+]
+
 ServerResult: TypeAlias = Union[
     Result,
     InitializeResult,
