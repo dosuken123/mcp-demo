@@ -220,7 +220,10 @@ def generate_token_from_authorization_code(
     # Validate resource
     # MUST use the canonical URI of the MCP server as defined in RFC 8707 Section 2.
     # https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#resource-parameter-implementation
-    if code_data["resource"] != resource or f"{request_url.scheme}://{request_url.netloc}" != resource:
+    if (
+        code_data["resource"] != resource
+        or f"{request_url.scheme}://{request_url.netloc}" != resource
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=OAuth2Error(

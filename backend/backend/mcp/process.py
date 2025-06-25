@@ -21,7 +21,8 @@ from backend.mcp.schema import (
 )
 from backend.auth.utils import User, db_in_memory
 from abc import ABC, abstractmethod
-
+from functools import lru_cache
+import os
 
 JSONRPC: TypeAlias = JSONRPCRequest | JSONRPCNotification | JSONRPCResponse
 
@@ -189,3 +190,11 @@ def process_rpc(rpc: JSONRPC, user: User):
         id=rpc.id,
         result=result,
     )
+
+
+@lru_cache
+def get_mcp_version():
+    path = os.path.join(os.path.dirname(__file__), "VERSION")
+    with open(path) as f:
+        version = f.read()
+    return version

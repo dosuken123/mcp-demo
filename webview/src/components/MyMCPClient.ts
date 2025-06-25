@@ -109,7 +109,8 @@ export default class MyMCPClient {
         headers: {
           'accept': 'application/json, text/event-stream',
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'MCP-Protocol-Version': '2025-06-18',
         },
         body: JSON.stringify({
           jsonrpc: '2.0',

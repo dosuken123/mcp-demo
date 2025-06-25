@@ -20,12 +20,19 @@ from backend.mcp.schema import (
     JSONRPCResponse,
     JSONRPCError,
 )
-from backend.mcp.process import process_rpc, JSONRPC
+from backend.mcp.process import process_rpc, get_mcp_version, JSONRPC
 
 
 def validate_mcp_headers(request: Request):
     if not request.headers.get("Origin"):
         raise HTTPException(status_code=400, detail="Missing Origin header")
+
+    mcp_protocol_version = request.headers.get("MCP-Protocol-Version")
+
+    # https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#protocol-version-header
+    if not mcp_protocol_version or get_mcp_version() != mcp_protocol_version:
+        raise HTTPException(status_code=400, detail="Specified MCP-Protocol-Version is not supported")
+
     return request
 
 

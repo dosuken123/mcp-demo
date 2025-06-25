@@ -36,7 +36,8 @@ You can convert the JSON schema into python module by the following script:
 
 ```shell
 export ANTHROPIC_API_KEY=[REDACTED]
-export JSON_SCHEMA_URL=https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/2025-06-18/schema.json
+export MCP_VERSION=$(cat backend/mcp/VERSION)
+export JSON_SCHEMA_URL=https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/schema/${MCP_VERSION}/schema.json
 
 make schema
 ```
