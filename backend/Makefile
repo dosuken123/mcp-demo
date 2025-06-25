@@ -5,3 +5,7 @@ schema:
 .PHONY: format
 format:
 	@poetry run black backend
+
+.PHONY: lint
+lint:
+	@poetry run pylint backend

@@ -1,22 +1,15 @@
 from fastapi import APIRouter
-from typing import Annotated, Optional, List, Dict, Any, TypeAlias
+from typing import Annotated, List
 from backend.auth.utils import User, get_current_user
 from fastapi import (
     Depends,
-    FastAPI,
     HTTPException,
-    status,
     Request,
-    Form,
     Header,
     Response,
 )
 from fastapi.responses import JSONResponse, StreamingResponse
 from backend.mcp.schema import (
-    ListToolsResult,
-    Tool,
-    JSONRPCRequest,
-    JSONRPCNotification,
     JSONRPCResponse,
     JSONRPCError,
 )
@@ -31,7 +24,9 @@ def validate_mcp_headers(request: Request):
 
     # https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#protocol-version-header
     if not mcp_protocol_version or get_mcp_version() != mcp_protocol_version:
-        raise HTTPException(status_code=400, detail="Specified MCP-Protocol-Version is not supported")
+        raise HTTPException(
+            status_code=400, detail="Specified MCP-Protocol-Version is not supported"
+        )
 
     return request
 
