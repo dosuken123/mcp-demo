@@ -40,7 +40,10 @@ async def mcp_get(
     if "text/event-stream" in accept:
         pass
     else:
-        raise HTTPException(status_code=400, detail="Invalid Accept header. Client must accept text/event-stream.")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Accept header. Client must accept text/event-stream.",
+        )
 
     # https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#sending-messages-to-the-server
     # Listening for Messages from the Server
@@ -62,7 +65,10 @@ async def mcp_post(
     if "application/json" in accept and "text/event-stream" in accept:
         pass
     else:
-        raise HTTPException(status_code=400, detail="Invalid Accept header. Client must accept both application/json and text/event-stream.")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Accept header. Client must accept both application/json and text/event-stream.",
+        )
 
     if not isinstance(rpc, List):
         rpc = [rpc]

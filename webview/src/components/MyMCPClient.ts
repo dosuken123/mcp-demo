@@ -6,6 +6,7 @@ export interface OAuthConfig {
   tokenEndpoint: string;
   clientId: string;
   redirectUri: string;
+  resource: string;
   scope: string;
   resourceEndpoint: string;
 }
@@ -40,6 +41,7 @@ export default class MyMCPClient {
       tokenEndpoint: 'http://localhost:8000/oauth/token',
       clientId: 'my-mcp-client',
       redirectUri: window.location.origin + '/callback',
+      resource: 'http://localhost:8000',
       scope: 'read write',
       resourceEndpoint: 'http://localhost:8000/mcp',
       ...config
@@ -164,6 +166,7 @@ export default class MyMCPClient {
       authUrl.searchParams.append('response_type', 'code');
       authUrl.searchParams.append('client_id', this.config.clientId);
       authUrl.searchParams.append('redirect_uri', this.config.redirectUri);
+      authUrl.searchParams.append('resource', this.config.resource);
       authUrl.searchParams.append('scope', this.config.scope);
       authUrl.searchParams.append('state', this.state);
       authUrl.searchParams.append('code_challenge', this.codeChallenge);
@@ -196,6 +199,7 @@ export default class MyMCPClient {
       params.append('grant_type', 'authorization_code');
       params.append('code', code);
       params.append('redirect_uri', this.config.redirectUri);
+      params.append('resource', this.config.resource);
       params.append('client_id', this.config.clientId);
       params.append('code_verifier', storedCodeVerifier);
       

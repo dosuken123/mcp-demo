@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
 from typing import Annotated, Optional, List, Dict, Any
+from starlette.datastructures import URL
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi import HTTPException, status, Request, Form
 from fastapi.templating import Jinja2Templates
@@ -38,6 +39,7 @@ async def authorize(
     scope: Optional[str] = "",
     code_challenge: Optional[str] = None,
     code_challenge_method: Optional[str] = "S256",
+    resource: Optional[str] = "",
 ):
     """OAuth 2.1 authorization endpoint"""
     # Validate request parameters
@@ -49,7 +51,8 @@ async def authorize(
 
     if not verify_client(client_id, redirect_uri):
         return HTMLResponse(
-            content=f"Invalid client ID or redirect URI. client_id: {client_id} redirect_uri: {redirect_uri}", status_code=400
+            content=f"Invalid client ID or redirect URI. client_id: {client_id} redirect_uri: {redirect_uri}",
+            status_code=400,
         )
 
     if not code_challenge and code_challenge_method != "none":
@@ -61,6 +64,11 @@ async def authorize(
     # Get client name for display
     client_name = OAUTH_CLIENTS[client_id]["client_name"]
 
+    # Resource Parameter Implementation
+    # https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#resource-parameter-implementation
+    if not resource:
+        resource = f"{request.url.scheme}://{request.url.netloc}"
+
     return templates.TemplateResponse(
         request=request,
         name="login.html.jinja",
@@ -68,6 +76,7 @@ async def authorize(
             "client_id": client_id,
             "client_name": client_name,
             "redirect_uri": redirect_uri,
+            "resource": resource,
             "response_type": response_type,
             "state": state or "",
             "scope": scope,
@@ -83,6 +92,7 @@ async def login(
     request: Request,
     client_id: str = Form(...),
     redirect_uri: str = Form(...),
+    resource: str = Form(...),
     response_type: str = Form(...),
     username: str = Form(...),
     password: str = Form(...),
@@ -106,6 +116,7 @@ async def login(
                 "client_name": client_name,
                 "redirect_uri": redirect_uri,
                 "response_type": response_type,
+                "resource": resource,
                 "state": state or "",
                 "scope": scope,
                 "code_challenge": code_challenge or "",
@@ -122,6 +133,7 @@ async def login(
         "client_id": client_id,
         "user": user.username,
         "redirect_uri": redirect_uri,
+        "resource": resource,
         "scope": scope,
         "code_challenge": code_challenge,
         "code_challenge_method": code_challenge_method,
@@ -137,176 +149,212 @@ async def login(
     return RedirectResponse(redirect_url, status_code=302)
 
 
-@router.post("/oauth/token", response_model=Token)
-async def token(
-    grant_type: str = Form(...),
-    client_id: str = Form(...),
-    code: Optional[str] = Form(None),
-    redirect_uri: Optional[str] = Form(None),
-    code_verifier: Optional[str] = Form(None),
-    refresh_token: Optional[str] = Form(None),
+def generate_token_from_authorization_code(
+    code: str,
+    redirect_uri: str,
+    code_verifier: str,
+    client_id: str,
+    resource: str,
+    request_url: URL,
 ):
-    """OAuth 2.1 token endpoint supporting authorization_code and refresh_token grant types"""
-    if grant_type == "authorization_code":
-        # Validate authorization code grant
-        if not code or not redirect_uri or not code_verifier:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=OAuth2Error(
-                    error="invalid_request",
-                    error_description="Missing required parameters for authorization_code grant",
-                ).dict(),
-            )
+    # Validate authorization code grant
+    if not code or not redirect_uri or not code_verifier:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=OAuth2Error(
+                error="invalid_request",
+                error_description="Missing required parameters for authorization_code grant",
+            ).dict(),
+        )
 
-        # Check if code exists and is valid
-        if code not in auth_code_store:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=OAuth2Error(
-                    error="invalid_grant",
-                    error_description="Invalid authorization code",
-                ).dict(),
-            )
+    # Check if code exists and is valid
+    if code not in auth_code_store:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=OAuth2Error(
+                error="invalid_grant",
+                error_description="Invalid authorization code",
+            ).dict(),
+        )
 
-        # Get stored data for the code
-        code_data = auth_code_store[code]
+    # Get stored data for the code
+    code_data = auth_code_store[code]
 
-        # Check if code has expired
-        if datetime.now(timezone.utc) > code_data["expires_at"]:
-            # Remove expired code
-            del auth_code_store[code]
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=OAuth2Error(
-                    error="invalid_grant",
-                    error_description="Authorization code expired",
-                ).dict(),
-            )
+    # Check if code has expired
+    if datetime.now(timezone.utc) > code_data["expires_at"]:
+        # Remove expired code
+        del auth_code_store[code]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=OAuth2Error(
+                error="invalid_grant",
+                error_description="Authorization code expired",
+            ).dict(),
+        )
 
-        # Validate client_id and redirect_uri
-        if (
-            code_data["client_id"] != client_id
-            or code_data["redirect_uri"] != redirect_uri
+    # Validate client_id and redirect_uri
+    if code_data["client_id"] != client_id or code_data["redirect_uri"] != redirect_uri:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=OAuth2Error(
+                error="invalid_grant",
+                error_description="client_id or redirect_uri does not match authorization request",
+            ).dict(),
+        )
+
+    # Verify PKCE code challenge
+    if code_data["code_challenge"]:
+        if not verify_code_challenge(
+            code_verifier,
+            code_data["code_challenge"],
+            code_data["code_challenge_method"],
         ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=OAuth2Error(
                     error="invalid_grant",
-                    error_description="client_id or redirect_uri does not match authorization request",
+                    error_description="Code verifier does not match code challenge",
                 ).dict(),
             )
 
-        # Verify PKCE code challenge
-        if code_data["code_challenge"]:
-            if not verify_code_challenge(
-                code_verifier,
-                code_data["code_challenge"],
-                code_data["code_challenge_method"],
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=OAuth2Error(
-                        error="invalid_grant",
-                        error_description="Code verifier does not match code challenge",
-                    ).dict(),
-                )
-
-        # Get user information
-        username = code_data["user"]
-        user = get_user(username)
-
-        # Create access token
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        scopes = parse_scope(code_data["scope"])
-
-        access_token = create_access_token(
-            data={"sub": user.username, "scopes": scopes},
-            expires_delta=access_token_expires,
+    # Validate resource
+    # MUST use the canonical URI of the MCP server as defined in RFC 8707 Section 2.
+    # https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#resource-parameter-implementation
+    if code_data["resource"] != resource or f"{request_url.scheme}://{request_url.netloc}" != resource:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=OAuth2Error(
+                error="invalid_grant",
+                error_description="resource doesn't match {}, {} and {}".format(
+                    code_data["resource"], resource, request_url.netloc
+                ),
+            ).dict(),
         )
 
-        # Generate refresh token
-        refresh_token_value = generate_refresh_token()
+    # Get user information
+    username = code_data["user"]
+    user = get_user(username)
 
-        # Store refresh token
-        refresh_token_store[refresh_token_value] = {
-            "user_id": user.username,
-            "client_id": client_id,
-            "scope": code_data["scope"],
-        }
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    scopes = parse_scope(code_data["scope"])
 
-        # Remove used authorization code
-        del auth_code_store[code]
+    access_token = create_access_token(
+        data={"sub": user.username, "scopes": scopes},
+        expires_delta=access_token_expires,
+    )
 
-        # Return tokens
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            "refresh_token": refresh_token_value,
-            "scope": code_data["scope"],
-        }
+    # Generate refresh token
+    refresh_token_value = generate_refresh_token()
 
+    # Store refresh token
+    refresh_token_store[refresh_token_value] = {
+        "user_id": user.username,
+        "client_id": client_id,
+        "scope": code_data["scope"],
+    }
+
+    # Remove used authorization code
+    del auth_code_store[code]
+
+    # Return tokens
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        "refresh_token": refresh_token_value,
+        "scope": code_data["scope"],
+    }
+
+
+def generate_token_from_refresh_token(refresh_token: str, client_id: str):
+    # Validate refresh token grant
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=OAuth2Error(
+                error="invalid_request",
+                error_description="Missing refresh_token parameter",
+            ).dict(),
+        )
+
+    # Check if refresh token exists
+    if refresh_token not in refresh_token_store:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=OAuth2Error(
+                error="invalid_grant", error_description="Invalid refresh token"
+            ).dict(),
+        )
+
+    # Get stored data for the refresh token
+    token_data = refresh_token_store[refresh_token]
+
+    # Validate client_id
+    if token_data["client_id"] != client_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=OAuth2Error(
+                error="invalid_grant",
+                error_description="Refresh token was not issued to this client",
+            ).dict(),
+        )
+
+    # Get user information
+    username = token_data["user_id"]
+    user = get_user(username)
+
+    # Create new access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    scopes = parse_scope(token_data["scope"])
+
+    access_token = create_access_token(
+        data={"sub": user.username, "scopes": scopes},
+        expires_delta=access_token_expires,
+    )
+
+    # Optionally rotate refresh token (best practice for security)
+    new_refresh_token = generate_refresh_token()
+    refresh_token_store[new_refresh_token] = token_data
+
+    # Remove old refresh token
+    del refresh_token_store[refresh_token]
+
+    # Return tokens
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        "refresh_token": new_refresh_token,
+        "scope": token_data["scope"],
+    }
+
+
+@router.post("/oauth/token", response_model=Token)
+async def token(
+    request: Request,
+    grant_type: str = Form(...),
+    client_id: str = Form(...),
+    code: Optional[str] = Form(None),
+    redirect_uri: Optional[str] = Form(None),
+    resource: Optional[str] = Form(None),
+    code_verifier: Optional[str] = Form(None),
+    refresh_token: Optional[str] = Form(None),
+):
+    """OAuth 2.1 token endpoint supporting authorization_code and refresh_token grant types"""
+    if grant_type == "authorization_code":
+        return generate_token_from_authorization_code(
+            code=code,
+            redirect_uri=redirect_uri,
+            code_verifier=code_verifier,
+            client_id=client_id,
+            resource=resource,
+            request_url=request.url,
+        )
     elif grant_type == "refresh_token":
-        # Validate refresh token grant
-        if not refresh_token:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=OAuth2Error(
-                    error="invalid_request",
-                    error_description="Missing refresh_token parameter",
-                ).dict(),
-            )
-
-        # Check if refresh token exists
-        if refresh_token not in refresh_token_store:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=OAuth2Error(
-                    error="invalid_grant", error_description="Invalid refresh token"
-                ).dict(),
-            )
-
-        # Get stored data for the refresh token
-        token_data = refresh_token_store[refresh_token]
-
-        # Validate client_id
-        if token_data["client_id"] != client_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=OAuth2Error(
-                    error="invalid_grant",
-                    error_description="Refresh token was not issued to this client",
-                ).dict(),
-            )
-
-        # Get user information
-        username = token_data["user_id"]
-        user = get_user(username)
-
-        # Create new access token
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        scopes = parse_scope(token_data["scope"])
-
-        access_token = create_access_token(
-            data={"sub": user.username, "scopes": scopes},
-            expires_delta=access_token_expires,
+        return generate_token_from_refresh_token(
+            refresh_token=refresh_token, client_id=client_id
         )
-
-        # Optionally rotate refresh token (best practice for security)
-        new_refresh_token = generate_refresh_token()
-        refresh_token_store[new_refresh_token] = token_data
-
-        # Remove old refresh token
-        del refresh_token_store[refresh_token]
-
-        # Return tokens
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            "refresh_token": new_refresh_token,
-            "scope": token_data["scope"],
-        }
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

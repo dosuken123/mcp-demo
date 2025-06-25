@@ -25,8 +25,8 @@ OAUTH_CLIENTS = {
         "client_id": "my-mcp-client",
         "client_name": "My MCP Client",
         "redirect_uris": [
-            "http://localhost:5173/callback", # Webview HTTP Server (Vite on browser)
-            "http://127.0.0.1:41648/callback" # Webview HTTP Server (Fastify in language server)
+            "http://localhost:5173/callback",  # Webview HTTP Server (Vite on browser)
+            "http://127.0.0.1:41648/callback",  # Webview HTTP Server (Fastify in language server)
         ],
         "allowed_scopes": ["read", "write"],
     }

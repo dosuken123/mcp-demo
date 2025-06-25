@@ -119,7 +119,8 @@ class BlobResourceContents(BaseModel):
 class ResourceLink(BaseModel):
     """A resource that the server is capable of reading, included in a prompt or tool call result.
 
-    Note: resource links returned by tools are not guaranteed to appear in the results of `resources/list` requests."""
+    Note: resource links returned by tools are not guaranteed to appear in the results of `resources/list` requests.
+    """
 
     type: Literal["resource_link"] = "resource_link"
     name: str = Field(
@@ -179,7 +180,9 @@ class PromptMessage(BaseModel):
     resources from the MCP server."""
 
     role: Role
-    content: Union[TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource]
+    content: Union[
+        TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource
+    ]
 
 
 class BaseMetadata(BaseModel):
@@ -242,6 +245,7 @@ class EnumSchema(BaseModel):
 class PrimitiveSchemaDefinition(BaseModel):
     """Restricted schema definitions that only allow primitive types
     without nested objects or arrays."""
+
     pass
 
 
@@ -534,7 +538,7 @@ class ModelHint(BaseModel):
 
     name: Optional[str] = Field(
         None,
-        description='A hint for a model name.\n\nThe client SHOULD treat this as a substring of a model name; for example:\n - `claude-3-5-sonnet` should match `claude-3-5-sonnet-20241022`\n - `sonnet` should match `claude-3-5-sonnet-20241022`, `claude-3-sonnet-20240229`, etc.\n - `claude` should match any Claude model\n\nThe client MAY also map the string to a different provider\'s model name or a different model family, as long as it fills a similar niche; for example:\n - `gemini-1.5-flash` could match `claude-3-haiku-20240307`',
+        description="A hint for a model name.\n\nThe client SHOULD treat this as a substring of a model name; for example:\n - `claude-3-5-sonnet` should match `claude-3-5-sonnet-20241022`\n - `sonnet` should match `claude-3-5-sonnet-20241022`, `claude-3-sonnet-20240229`, etc.\n - `claude` should match any Claude model\n\nThe client MAY also map the string to a different provider's model name or a different model family, as long as it fills a similar niche; for example:\n - `gemini-1.5-flash` could match `claude-3-haiku-20240307`",
     )
 
 
@@ -692,7 +696,8 @@ class ListRootsRequest(BaseModel):
     on.
 
     This request is typically used when the server needs to understand the file system
-    structure or access specific locations that the client has permission to read from."""
+    structure or access specific locations that the client has permission to read from.
+    """
 
     method: Literal["roots/list"] = "roots/list"
     params: Optional[ListRootsRequestParams] = None
@@ -713,7 +718,8 @@ class RootsListChangedNotificationParams(BaseModel):
 class RootsListChangedNotification(BaseModel):
     """A notification from the client to the server, informing it that the list of roots has changed.
     This notification should be sent whenever the client adds, removes, or modifies any root.
-    The server should then request an updated list of roots using the ListRootsRequest."""
+    The server should then request an updated list of roots using the ListRootsRequest.
+    """
 
     method: Literal["notifications/roots/list_changed"] = (
         "notifications/roots/list_changed"
@@ -952,9 +958,12 @@ class CallToolRequest(BaseModel):
 class CallToolResult(Result):
     """The server's response to a tool call."""
 
-    content: List[Union[TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource]]
+    content: List[
+        Union[TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource]
+    ]
     structuredContent: Optional[Dict[str, Any]] = Field(
-        None, description="An optional JSON object that represents the structured result of the tool call."
+        None,
+        description="An optional JSON object that represents the structured result of the tool call.",
     )
     isError: Optional[bool] = Field(
         None,
