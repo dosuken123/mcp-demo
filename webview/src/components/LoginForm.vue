@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import MyMCPClient from './MyMCPClient'
+import Chat from './Chat.vue'
 
 const isLoading = ref<boolean>(false)
 const errorMessage = ref<string>('')
@@ -118,6 +119,8 @@ onMounted(async (): Promise<void> => {
           {{ accessToken }}
         </div>
       </div>
+
+      <chat />
       
       <button @click="logout" style="margin-top: 20px; background: #f44336; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
         Logout

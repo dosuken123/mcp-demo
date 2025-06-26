@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.routers import auth, mcp
+from backend.routers import auth, mcp, llm
 
 app = FastAPI()
 
 app.include_router(auth.router)
 app.include_router(mcp.router)
+app.include_router(llm.router)
 
 app.add_middleware(
     CORSMiddleware,

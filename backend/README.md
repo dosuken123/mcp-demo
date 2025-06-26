@@ -14,6 +14,12 @@
 poetry run fastapi dev backend/main.py --host localhost
 ```
 
+If you test inference, you need to set the following environment variables:
+
+```
+export ANTHROPIC_API_KEY=[REDACTED]
+```
+
 ## Test modules
 
 ```python
@@ -126,6 +132,7 @@ curl -X POST \
      -H 'Accept: application/json, text/event-stream' \
      -H 'Authorization: Bearer dummy' \
      -H 'Origin: localhost:5173' \
+     -H 'MCP-Protocol-Version: 2025-06-18' \
      -d '{
   "jsonrpc": "2.0",
   "id": 1,
@@ -155,6 +162,7 @@ curl -X POST \
      -H 'Accept: application/json, text/event-stream' \
      -H 'Authorization: Bearer dummy' \
      -H 'Origin: localhost:5173' \
+     -H 'MCP-Protocol-Version: 2025-06-18' \
      -d '{
   "jsonrpc": "2.0",
   "method": "notifications/initialized"
@@ -170,6 +178,7 @@ curl -X POST \
      -H 'Accept: application/json, text/event-stream' \
      -H 'Authorization: Bearer dummy' \
      -H 'Origin: localhost:5173' \
+     -H 'MCP-Protocol-Version: 2025-06-18' \
      -d '{
   "jsonrpc": "2.0",
   "id": "123",
@@ -190,6 +199,7 @@ curl -X POST \
      -H 'Accept: application/json, text/event-stream' \
      -H 'Authorization: Bearer dummy' \
      -H 'Origin: localhost:5173' \
+     -H 'MCP-Protocol-Version: 2025-06-18' \
      -d '{
   "jsonrpc": "2.0",
   "id": "1",
@@ -256,6 +266,7 @@ curl -X POST \
      -H 'Accept: application/json, text/event-stream' \
      -H 'Authorization: Bearer dummy' \
      -H 'Origin: localhost:5173' \
+     -H 'MCP-Protocol-Version: 2025-06-18' \
      -d '{
   "jsonrpc": "2.0",
   "id": 2,
@@ -334,6 +345,7 @@ curl -X POST \
      -H 'Accept: application/json, text/event-stream' \
      -H 'Authorization: Bearer dummy' \
      -H 'Origin: localhost:5173' \
+     -H 'MCP-Protocol-Version: 2025-06-18' \
      -d '{
   "jsonrpc": "2.0",
   "id": 2,
@@ -363,6 +375,30 @@ Response:
     ]
   }
 }
+```
+
+## Test inference
+
+```
+curl -X POST \
+     http://localhost:8000/inference \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: text/event-stream' \
+     -H 'Authorization: Bearer dummy' \
+     -H 'Origin: localhost:5173' \
+     -H 'MCP-Protocol-Version: 2025-06-18' \
+     -d '{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "update_blog_post",
+    "arguments": {
+      "blog_post_id": 1,
+      "new_content": "Day after tomorrow will be an awesome day"
+    }
+  }
+}'
 ```
 
 ## Test Login screen
