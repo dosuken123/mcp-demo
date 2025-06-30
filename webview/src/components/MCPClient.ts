@@ -20,10 +20,12 @@ export interface ResourceAccessResult {
   error?: string;
 }
 
+import { store } from './store'
+
 /**
- * MyMCPClient handles OAuth 2.0 authentication flow with PKCE
+ * MCPClient handles OAuth 2.0 authentication flow with PKCE
  */
-export default class MyMCPClient {
+export default class MCPClient {
   private config: OAuthConfig;
   private accessToken: string;
   private codeVerifier: string;
@@ -31,7 +33,7 @@ export default class MyMCPClient {
   private state: string;
 
   /**
-   * Creates a new MyMCPClient instance
+   * Creates a new MCPClient instance
    * @param config Configuration options
    */
   constructor(config: Partial<OAuthConfig>) {
@@ -91,62 +93,62 @@ export default class MyMCPClient {
     return base64Digest;
   }
 
-  /**
-   * Attempts to access a protected resource with existing token
-   * @returns Promise resolving to access result
-   */
-  public async tryAccessResource(): Promise<ResourceAccessResult> {
-    try {
-      const token = localStorage.getItem('oauth_access_token');
+  // /**
+  //  * Attempts to access a protected resource with existing token
+  //  * @returns Promise resolving to access result
+  //  */
+  // public async tryAccessResource(): Promise<ResourceAccessResult> {
+  //   try {
+  //     const token = localStorage.getItem('oauth_access_token');
       
-      if (!token) {
-        throw new Error('No access token available');
-      }
+  //     if (!token) {
+  //       throw new Error('No access token available');
+  //     }
       
-      this.accessToken = token;
-      const response = await fetch(this.config.resourceEndpoint, {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json, text/event-stream',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'MCP-Protocol-Version': '2025-06-18',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/list'
-        })
-      });
+  //     this.accessToken = token;
+  //     const response = await fetch(this.config.resourceEndpoint, {
+  //       method: 'POST',
+  //       headers: {
+  //         'accept': 'application/json, text/event-stream',
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`,
+  //         'MCP-Protocol-Version': '2025-06-18',
+  //       },
+  //       body: JSON.stringify({
+  //         jsonrpc: '2.0',
+  //         id: 1,
+  //         method: 'tools/list'
+  //       })
+  //     });
       
-      if (response.status === 401) {
-        // Token expired or invalid, try refresh token first
-        const refreshToken = localStorage.getItem('oauth_refresh_token');
-        if (refreshToken) {
-          const refreshed = await this.refreshAccessToken(refreshToken);
-          if (refreshed) {
-            return await this.tryAccessResource(); // Try again with new token
-          }
-        }
+  //     if (response.status === 401) {
+  //       // Token expired or invalid, try refresh token first
+  //       const refreshToken = localStorage.getItem('oauth_refresh_token');
+  //       if (refreshToken) {
+  //         const refreshed = await this.refreshAccessToken(refreshToken);
+  //         if (refreshed) {
+  //           return await this.tryAccessResource(); // Try again with new token
+  //         }
+  //       }
         
-        return { success: false };
-      }
+  //       return { success: false };
+  //     }
       
-      if (response.status != 202) {
-        throw new Error('Failed to fetch tool data');
-      }
+  //     if (response.status != 202) {
+  //       throw new Error('Failed to fetch tool data');
+  //     }
       
-      const data = await response.json();
-      return { success: true, toolData: data };
+  //     const data = await response.json();
+  //     return { success: true, toolData: data };
       
-    } catch (error) {
-      console.error('Error accessing resource:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
-  }
+  //   } catch (error) {
+  //     console.error('Error accessing resource:', error);
+  //     return { 
+  //       success: false, 
+  //       error: error instanceof Error ? error.message : String(error)
+  //     };
+  //   }
+  // }
 
   /**
    * Initiates OAuth flow with PKCE
@@ -184,11 +186,11 @@ export default class MyMCPClient {
   }
 
   /**
-   * Exchanges authorization code for access tokens
+   * Generate OAuth access token from authorization code
    * @param code Authorization code from OAuth server
    * @returns Promise resolving to user data
    */
-  public async exchangeCodeForToken(code: string): Promise<any> {
+  public async generateToken(code: string): Promise<any> {
     try {
       // Get stored code verifier
       const storedCodeVerifier = localStorage.getItem('oauth_code_verifier');
@@ -220,6 +222,7 @@ export default class MyMCPClient {
       
       // Save tokens
       this.accessToken = data.access_token;
+      store.updateHasValidAccessToken(true);
       localStorage.setItem('oauth_access_token', data.access_token);
       
       if (data.refresh_token) {
@@ -230,9 +233,7 @@ export default class MyMCPClient {
       localStorage.removeItem('oauth_code_verifier');
       localStorage.removeItem('oauth_state');
       
-      // Fetch tool data with new token
-      const toolData = await this.tryAccessResource();
-      return toolData;
+      return this.accessToken;
       
     } catch (error) {
       console.error('Token exchange error:', error);
@@ -307,7 +308,7 @@ export default class MyMCPClient {
       }
       
       // Exchange code for token
-      return await this.exchangeCodeForToken(code);
+      return await this.generateToken(code);
     }
     
     return null;
@@ -321,6 +322,7 @@ export default class MyMCPClient {
     this.accessToken = '';
     localStorage.removeItem('oauth_access_token');
     localStorage.removeItem('oauth_refresh_token');
+    store.updateHasValidAccessToken(false);
     return true;
   }
 

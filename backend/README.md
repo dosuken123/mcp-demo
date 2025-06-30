@@ -10,7 +10,7 @@
 
 ## Start server
 
-```
+```shell
 poetry run fastapi dev backend/main.py --host localhost
 ```
 
@@ -379,7 +379,7 @@ Response:
 
 ## Test inference
 
-```
+```shell
 curl -X POST \
      http://localhost:8000/inference \
      -H 'Content-Type: application/json' \
