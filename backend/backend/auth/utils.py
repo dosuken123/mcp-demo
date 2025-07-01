@@ -108,7 +108,7 @@ def get_user(username: str):
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    if os.environ.get("BYPASS_AUTH"):
+    if os.environ.get("BYPASS_AUTH") == 'true':
         return get_user(username="johndoe")
 
     credentials_exception = HTTPException(

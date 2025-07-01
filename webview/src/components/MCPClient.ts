@@ -9,6 +9,7 @@ export interface OAuthConfig {
   resource: string;
   scope: string;
   resourceEndpoint: string;
+  inferenceEndpoint: string;
 }
 
 /**
@@ -46,6 +47,7 @@ export default class MCPClient {
       resource: 'http://localhost:8000',
       scope: 'read write',
       resourceEndpoint: 'http://localhost:8000/mcp',
+      inferenceEndpoint: 'http://localhost:8000/inference',
       ...config
     };
     
@@ -92,63 +94,6 @@ export default class MCPClient {
     this.codeChallenge = base64Digest;
     return base64Digest;
   }
-
-  // /**
-  //  * Attempts to access a protected resource with existing token
-  //  * @returns Promise resolving to access result
-  //  */
-  // public async tryAccessResource(): Promise<ResourceAccessResult> {
-  //   try {
-  //     const token = localStorage.getItem('oauth_access_token');
-      
-  //     if (!token) {
-  //       throw new Error('No access token available');
-  //     }
-      
-  //     this.accessToken = token;
-  //     const response = await fetch(this.config.resourceEndpoint, {
-  //       method: 'POST',
-  //       headers: {
-  //         'accept': 'application/json, text/event-stream',
-  //         'Content-Type': 'application/json',
-  //         'Authorization': `Bearer ${token}`,
-  //         'MCP-Protocol-Version': '2025-06-18',
-  //       },
-  //       body: JSON.stringify({
-  //         jsonrpc: '2.0',
-  //         id: 1,
-  //         method: 'tools/list'
-  //       })
-  //     });
-      
-  //     if (response.status === 401) {
-  //       // Token expired or invalid, try refresh token first
-  //       const refreshToken = localStorage.getItem('oauth_refresh_token');
-  //       if (refreshToken) {
-  //         const refreshed = await this.refreshAccessToken(refreshToken);
-  //         if (refreshed) {
-  //           return await this.tryAccessResource(); // Try again with new token
-  //         }
-  //       }
-        
-  //       return { success: false };
-  //     }
-      
-  //     if (response.status != 202) {
-  //       throw new Error('Failed to fetch tool data');
-  //     }
-      
-  //     const data = await response.json();
-  //     return { success: true, toolData: data };
-      
-  //   } catch (error) {
-  //     console.error('Error accessing resource:', error);
-  //     return { 
-  //       success: false, 
-  //       error: error instanceof Error ? error.message : String(error)
-  //     };
-  //   }
-  // }
 
   /**
    * Initiates OAuth flow with PKCE
@@ -332,5 +277,51 @@ export default class MCPClient {
    */
   public getAccessToken(): string {
     return this.accessToken || localStorage.getItem('oauth_access_token') || '';
+  }
+
+  public async *inference(): AsyncGenerator<string> {
+    const response = await fetch(this.config.inferenceEndpoint, {
+      method: 'POST',
+      headers: {
+        'accept': 'text/event-stream',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.getAccessToken()}`,
+      },
+      body: JSON.stringify({
+        'messages': [{'user': 'test'}]
+      })
+    });
+    
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { value, done } = await reader.read();
+
+      if (done) { break; }
+
+      const chunkString = decoder.decode(value);
+      console.log(`value: ${chunkString}`);
+
+      for (const data of this.parseSSE(chunkString)) {
+        yield data;
+      }
+    }
+  }
+
+  *parseSSE(chunk: string): any {
+    const lines = chunk.split('\n');
+    
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const jsonData = line.substring(6); // Remove 'data: ' prefix
+          yield JSON.parse(jsonData);
+        } catch (e) {
+          // Skip invalid JSON lines
+          continue;
+        }
+      }
+    }
   }
 }
