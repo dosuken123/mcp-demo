@@ -23,12 +23,7 @@ async def inference(
 
     stream = await client.messages.create(
         max_tokens=1024,
-        messages=[
-            {
-                "role": "user",
-                "content": "Hello, Claude",
-            }
-        ],
+        messages=inferenceRequest['messages'],
         model="claude-3-5-sonnet-latest",
         stream=True,
     )

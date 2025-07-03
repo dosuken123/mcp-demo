@@ -279,7 +279,7 @@ export default class MCPClient {
     return this.accessToken || localStorage.getItem('oauth_access_token') || '';
   }
 
-  public async *inference(): AsyncGenerator<string> {
+  public async *inference(messages: Array<string>): AsyncGenerator<string> {
     const response = await fetch(this.config.inferenceEndpoint, {
       method: 'POST',
       headers: {
@@ -288,7 +288,7 @@ export default class MCPClient {
         'Authorization': `Bearer ${this.getAccessToken()}`,
       },
       body: JSON.stringify({
-        'messages': [{'user': 'test'}]
+        'messages': messages
       })
     });
     

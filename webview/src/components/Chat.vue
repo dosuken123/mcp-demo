@@ -1,21 +1,32 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref } from 'vue'
 import { store } from './store'
+import ChatMesage from './ChatMessage.vue'
+import ChatForm from './ChatForm.vue'
 
-const route = useRoute()
 const loading = ref(false)
 const error = ref(null)
-const inferenceResponse = ref('')
+const messages = ref([]);
 
-onMounted(async (): Promise<void> => {
+async function onSendUserMessage(content) {
+  const message = { "content": content, "role": "user" }
+
+  messages.value.push(message);
+
+  let inferenceResponse = ''
+
   const mcpClient = store.getMcpClient();
-  for await (const response of mcpClient.inference()) {
+  for await (const response of mcpClient.inference(messages.value)) {
     if (response?.delta?.text) {
-        inferenceResponse.value += response.delta.text;
+        inferenceResponse += response.delta.text;
     }
   };
-});
+
+  if (inferenceResponse) {
+    const aiMessage = { "content": inferenceResponse, "role": "assistant" }
+    messages.value.push(aiMessage);
+  }
+}
 </script>
 
 <template>
@@ -24,6 +35,7 @@ onMounted(async (): Promise<void> => {
 
     <div v-if="error" class="error">{{ error }}</div>
 
-    <p>{{ inferenceResponse }}</p>
+    <ChatMesage v-for="message in messages" :message="message"/>
+    <ChatForm @send-user-message="onSendUserMessage" />
   </div>
 </template>
