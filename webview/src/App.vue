@@ -13,10 +13,6 @@ onMounted(async (): Promise<void> => {
 </script>
 
 <template>
-  <header>
-    <h1>Chat app (MCP Host)</h1>
-  </header>
-
   <div v-if="store.hasValidAccessToken">
     <Chat />
     <Logout />
