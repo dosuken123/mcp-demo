@@ -8,7 +8,7 @@ export interface OAuthConfig {
   redirectUri: string;
   resource: string;
   scope: string;
-  resourceEndpoint: string;
+  mcpEndpoint: string;
   inferenceEndpoint: string;
 }
 
@@ -46,7 +46,7 @@ export default class MCPClient {
       redirectUri: window.location.origin + '/callback',
       resource: 'http://localhost:8000',
       scope: 'read write',
-      resourceEndpoint: 'http://localhost:8000/mcp',
+      mcpEndpoint: 'http://localhost:8000/mcp',
       inferenceEndpoint: 'http://localhost:8000/inference',
       ...config
     };
@@ -279,16 +279,41 @@ export default class MCPClient {
     return this.accessToken || localStorage.getItem('oauth_access_token') || '';
   }
 
-  public async *inference(messages: Array<string>): AsyncGenerator<string> {
+  public async getTools(): Promise<any> {
+    const response = await fetch(this.config.mcpEndpoint, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json, text/event-stream',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.getAccessToken()}`,
+        'MCP-Protocol-Version': '2025-06-18'
+      },
+      body: JSON.stringify({
+        "jsonrpc": "2.0",
+        "id": "1",
+        "method": "tools/list",
+        "params": {
+          "additionalProp1": {}
+        }
+      })
+    })
+
+    const tools = response.json();
+
+    return tools;
+  }
+
+  public async *inference(messages: Array<string>, tools: Array<any>): AsyncGenerator<string> {
     const response = await fetch(this.config.inferenceEndpoint, {
       method: 'POST',
       headers: {
-        'accept': 'text/event-stream',
+        'accept': 'text/event-stream, application/json',
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.getAccessToken()}`,
       },
       body: JSON.stringify({
-        'messages': messages
+        'messages': messages,
+        'tools': tools,
       })
     });
     

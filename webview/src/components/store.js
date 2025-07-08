@@ -3,10 +3,14 @@ import MCPClient from './MCPClient'
 
 export const store = reactive({
     mcpClinet: null,
+    mcpTools: [],
     hasValidAccessToken: false,
 
     updateHasValidAccessToken(flag) {
         this.hasValidAccessToken = flag
+    },
+    updateMcpTools(tools) {
+        this.mcpTools = tools;
     },
     getMcpClient() {
         if (this.mcpClinet) { return this.mcpClinet }

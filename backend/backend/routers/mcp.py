@@ -25,7 +25,7 @@ def validate_mcp_headers(request: Request):
     # https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#protocol-version-header
     if not mcp_protocol_version or get_mcp_version() != mcp_protocol_version:
         raise HTTPException(
-            status_code=400, detail="Specified MCP-Protocol-Version is not supported"
+            status_code=400, detail=f"You need to specify valid MCP-Protocol-Version. Current version: {get_mcp_version()}"
         )
 
     return request

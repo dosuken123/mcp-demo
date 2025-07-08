@@ -7,7 +7,7 @@ from fastapi import (
     Response,
 )
 from fastapi.responses import StreamingResponse
-from anthropic import AsyncAnthropic
+from anthropic import AsyncAnthropic, BadRequestError
 
 router = APIRouter()
 
@@ -21,12 +21,18 @@ async def inference(
 ):
     client = AsyncAnthropic()
 
-    stream = await client.messages.create(
-        max_tokens=1024,
-        messages=inferenceRequest['messages'],
-        model="claude-3-5-sonnet-latest",
-        stream=True,
-    )
+    try:
+        stream = await client.messages.create(
+            max_tokens=1024,
+            messages=inferenceRequest['messages'],
+            tools=inferenceRequest['tools'],
+            model="claude-3-5-sonnet-latest",
+            stream=True,
+        )
+    except BadRequestError as ex:
+        return Response(content=f"Failed to perform inference. error: {ex}", status_code=ex.status_code)
+    except Exception as ex:
+        return Response(content=f"Failed to perform inference. error: {ex}", status_code=500)
 
     async def streaming_response():
         async for event in stream:
