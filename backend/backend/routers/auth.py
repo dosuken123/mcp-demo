@@ -239,12 +239,11 @@ def generate_token_from_authorization_code(
     user = get_user(username)
 
     # Create access token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     scopes = parse_scope(code_data["scope"])
 
     access_token = create_access_token(
         data={"sub": user.username, "scopes": scopes},
-        expires_delta=access_token_expires,
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
     # Generate refresh token

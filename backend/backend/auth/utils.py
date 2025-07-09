@@ -111,23 +111,30 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     if os.environ.get("BYPASS_AUTH") == 'true':
         return get_user(username="johndoe")
 
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="`sub` attribute is not found in JWT",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         token_scopes = payload.get("scopes", [])
         token_data = TokenData(username=username, scopes=token_scopes)
-    except InvalidTokenError:
-        raise credentials_exception
+    except InvalidTokenError as ex:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid token error. {ex}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     user = get_user(username=token_data.username)
     if user is None:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"User name {token_data.username} does not exist in database.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
 
 
@@ -158,12 +165,9 @@ def generate_refresh_token():
     return secrets.token_urlsafe(48)
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=15)):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    expire = datetime.now(timezone.utc) + expires_delta
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

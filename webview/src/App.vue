@@ -8,7 +8,7 @@ import { store } from './components/store'
 
 onMounted(async (): Promise<void> => {
   store.updateHasValidAccessToken(
-    !!store.getMcpClient().getAccessToken()
+    !!await store.getMcpClient().getAccessToken()
   );
 });
 </script>

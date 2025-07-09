@@ -6,7 +6,6 @@ import MCPClient from './MCPClient'
 const isLoading = ref<boolean>(false)
 const errorMessage = ref<string>('')
 const successMessage = ref<string>('')
-const accessToken = ref<string>('')
 
 // Initiate OAuth flow with PKCE
 const initiateOAuthFlow = async (): Promise<void> => {
@@ -36,7 +35,6 @@ onMounted(async (): Promise<void> => {
       const result = await store.getMcpClient().handleOAuthCallback(urlParams);
       
       if (result) {
-        accessToken.value = store.getMcpClient().getAccessToken();
         successMessage.value = 'Authentication successful!';
         
         // Clean up URL after successful exchange

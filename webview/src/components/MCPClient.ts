@@ -167,8 +167,10 @@ export default class MCPClient {
       
       // Save tokens
       this.accessToken = data.access_token;
+      const expires_at = this.currentEpochTime() + data.expires_in;
       store.updateHasValidAccessToken(true);
       localStorage.setItem('oauth_access_token', data.access_token);
+      localStorage.setItem('oauth_access_token_expires_at', expires_at);
       
       if (data.refresh_token) {
         localStorage.setItem('oauth_refresh_token', data.refresh_token);
@@ -191,7 +193,7 @@ export default class MCPClient {
    * @param refreshToken Refresh token from previous authentication
    * @returns Promise resolving to success status
    */
-  public async refreshAccessToken(refreshToken: string): Promise<boolean> {
+  public async refreshAccessToken(refreshToken: string): Promise<any> {
     try {
       const params = new URLSearchParams();
       params.append('grant_type', 'refresh_token');
@@ -207,7 +209,7 @@ export default class MCPClient {
       });
       
       const data = await response.json();
-      
+
       if (!response.ok) {
         // If refresh fails, clear tokens and return false
         localStorage.removeItem('oauth_access_token');
@@ -217,13 +219,16 @@ export default class MCPClient {
       
       // Save new tokens
       this.accessToken = data.access_token;
+      const expires_at = this.currentEpochTime() + data.expires_in;
       localStorage.setItem('oauth_access_token', data.access_token);
+      localStorage.setItem('oauth_access_token_expires_at', expires_at);
       
+
       if (data.refresh_token) {
         localStorage.setItem('oauth_refresh_token', data.refresh_token);
       }
       
-      return true;
+      return this.accessToken;
       
     } catch (error) {
       console.error('Token refresh error:', error);
@@ -275,8 +280,37 @@ export default class MCPClient {
    * Gets current access token
    * @returns Access token string
    */
-  public getAccessToken(): string {
-    return this.accessToken || localStorage.getItem('oauth_access_token') || '';
+  public async getAccessToken(): Promise<string> {
+    if (!this.validateAccessTokenExpiresIn()) {
+      const refreshToken = localStorage.getItem('oauth_refresh_token');
+      if (refreshToken) {
+        await this.refreshAccessToken(refreshToken);
+      } else {
+        return '';
+      }
+    }
+    
+    const accessToken = this.accessToken || localStorage.getItem('oauth_access_token') || '';
+
+    return accessToken;
+  }
+
+  public validateAccessTokenExpiresIn(): boolean {
+    const expiresAt = localStorage.getItem('oauth_access_token_expires_at');
+
+    if (expiresAt === null) {
+      return false;
+    }
+
+    if (this.currentEpochTime() > parseInt(expiresAt)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  currentEpochTime(): number {
+    return Math.floor((new Date).getTime() / 1000);
   }
 
   public async getTools(): Promise<any> {
@@ -285,7 +319,7 @@ export default class MCPClient {
       headers: {
         'accept': 'application/json, text/event-stream',
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.getAccessToken()}`,
+        'Authorization': `Bearer ${await this.getAccessToken()}`,
         'MCP-Protocol-Version': '2025-06-18'
       },
       body: JSON.stringify({
@@ -309,7 +343,7 @@ export default class MCPClient {
       headers: {
         'accept': 'text/event-stream, application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.getAccessToken()}`,
+        'Authorization': `Bearer ${await this.getAccessToken()}`,
       },
       body: JSON.stringify({
         'messages': messages,
