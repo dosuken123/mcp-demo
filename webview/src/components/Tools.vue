@@ -10,5 +10,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <p>{{ store.mcpTools }}</p>
+  <p class="text-base text-gray-400 dark:text-gray-500">
+    {{ store.mcpTools }}
+  </p>
 </template>
