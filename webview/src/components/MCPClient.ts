@@ -360,7 +360,8 @@ export default class MCPClient {
       if (done) { break; }
 
       const chunkString = decoder.decode(value);
-      console.log(`value: ${chunkString}`);
+      console.log('chunkString ---');
+      console.log(`${chunkString}`);
 
       for (const data of this.parseSSE(chunkString)) {
         yield data;

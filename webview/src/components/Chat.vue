@@ -4,9 +4,22 @@ import { store } from './store'
 import ChatMesage from './ChatMessage.vue'
 import ChatForm from './ChatForm.vue'
 
+type Message = {
+  content: string;
+  role: string;
+  tool: Tool;
+}
+
+type Tool = {
+  name: string;
+  id: string;
+  inputJson: string;
+}
+
 const loading = ref(false)
 const error = ref(null)
 const messages = ref([]);
+const tool = ref(null);
 
 function convertMcpTools(mcpTools) {
   // Handle both direct tools array and nested result.tools structure
@@ -51,6 +64,31 @@ function convertMcpTools(mcpTools) {
   });
 }
 
+async function processTextContentBlock(response) {
+  if (response?.delta?.text) {
+    const lastMessage = messages.value[messages.value.length - 1] as Message;
+
+    if (lastMessage.role === "user") {
+      const message = { "content": response.delta.text, "role": "assistant" } as Message;
+      messages.value.push(message)
+    }
+    else if (lastMessage.role === "assistant") {
+      lastMessage.content += response.delta.text
+    }
+    else {
+      throw new Error(`Unsupported role ${lastMessage.role}`)
+    }
+  }
+}
+
+async function processToolUseContentBlock(response) {
+  if (response?.delta?.partial_json) {
+    const lastMessage = messages.value[messages.value.length - 1] as Message;
+
+    lastMessage.tool.inputJson += response.delta.partial_json;
+  }
+}
+
 async function onSendUserMessage(content) {
   const message = { "content": content, "role": "user" }
 
@@ -58,19 +96,27 @@ async function onSendUserMessage(content) {
 
   const mcpClient = store.getMcpClient();
   const tools = convertMcpTools(store.mcpTools);
+  let currentContentBlock = null;
   for await (const response of mcpClient.inference(messages.value, tools)) {
-    if (response?.delta?.text) {
-        const lastMessage = messages.value[messages.value.length - 1];
+    if (response?.content_block) {
+      currentContentBlock = response.content_block;
+    }
 
-        if (lastMessage.role === "user") {
-          messages.value.push({ "content": response.delta.text, "role": "assistant" })
-        }
-        else if (lastMessage.role === "assistant") {
-          lastMessage.content += response.delta.text
-        }
-        else {
-          throw new Error(`Unsupported role ${lastMessage.role}`)
-        }
+    if (currentContentBlock?.type == "text") {
+      processTextContentBlock(response);
+    } else if (currentContentBlock?.type == "tool_use") {
+      const lastMessage = messages.value[messages.value.length - 1] as Message;
+
+      if (lastMessage.role != "assistant") {
+        console.log(`WARN: processToolUseContentBlock must have the assistant message at last`)
+        return
+      }
+
+      if (!lastMessage.tool) {
+        lastMessage.tool = { name: currentContentBlock.name, id: currentContentBlock.id, inputJson: "" } as Tool;
+      }
+
+      processToolUseContentBlock(response);
     }
   };
 }
