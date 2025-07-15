@@ -4,7 +4,7 @@ import { store } from './store'
 
 onMounted(async () => {
   const mcpClient = store.getMcpClient();
-  const tools = await mcpClient.getTools();
+  const tools = await mcpClient.listTools();
   store.updateMcpTools(tools);
 })
 </script>

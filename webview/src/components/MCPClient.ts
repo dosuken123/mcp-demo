@@ -12,13 +12,26 @@ export interface OAuthConfig {
   inferenceEndpoint: string;
 }
 
-/**
- * Result of resource access attempt
- */
-export interface ResourceAccessResult {
-  success: boolean;
-  toolData?: any;
-  error?: string;
+export type MessageContent = {
+  type: string;
+  text: string;
+  id: string            // For tool use in assistant message
+  name: string          // For tool use in assistant message
+  input: object         // For tool use in assistant message
+  inputBuffer: string   // For stremable input
+  tool_use_id: string;  // For tool result in user message
+  content: string;      // For tool result in user message
+}
+
+export type Message = {
+  content: Array<MessageContent>;
+  role: string;
+}
+
+export type Tool = {
+  name: string;
+  id: string;
+  inputJson: string;
 }
 
 import { store } from './store'
@@ -313,7 +326,7 @@ export default class MCPClient {
     return Math.floor((new Date).getTime() / 1000);
   }
 
-  public async getTools(): Promise<any> {
+  public async listTools(): Promise<any> {
     const response = await fetch(this.config.mcpEndpoint, {
       method: 'POST',
       headers: {
@@ -332,12 +345,38 @@ export default class MCPClient {
       })
     })
 
-    const tools = response.json();
+    const result = response.json();
 
-    return tools;
+    return result;
   }
 
-  public async *inference(messages: Array<string>, tools: Array<any>): AsyncGenerator<string> {
+  public async callTool(tool: Tool) {
+    console.log(`tool.inputJson: ${tool.inputJson}`);
+    const response = await fetch(this.config.mcpEndpoint, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json, text/event-stream',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${await this.getAccessToken()}`,
+        'MCP-Protocol-Version': '2025-06-18'
+      },
+      body: JSON.stringify({
+        "jsonrpc": "2.0",
+        "id": "1",
+        "method": "tools/call",
+        "params": {
+          "name": tool.name,
+          "arguments": JSON.parse(tool.inputJson)
+        }
+      })
+    })
+
+    const result = response.json();
+
+    return result;
+  }
+
+  public async *inference(messages: Array<Message>, tools: Array<Tool>): AsyncGenerator<string> {
     const response = await fetch(this.config.inferenceEndpoint, {
       method: 'POST',
       headers: {
@@ -383,5 +422,48 @@ export default class MCPClient {
         }
       }
     }
+  }
+
+  public convertMcpToolsForInference(mcpTools) {
+    // Handle both direct tools array and nested result.tools structure
+    const tools = mcpTools.result?.tools || mcpTools.tools || mcpTools;
+    
+    if (!Array.isArray(tools)) {
+      console.warn('Expected tools to be an array, got:', typeof tools);
+      return [];
+    }
+
+    return tools.map(tool => {
+      // Convert inputSchema to input_schema with proper structure
+      const inputSchema = tool.inputSchema || {};
+      
+      // Build properties object from inputSchema
+      const properties = {};
+      const required = [];
+      
+      Object.entries(inputSchema).forEach(([key, value]) => {
+        if (typeof value === 'object' && value !== null) {
+          // Map type from 'str' to 'string' and preserve other properties
+          properties[key] = {
+            type: value.type === 'str' ? 'string' : value.type,
+            ...(value.description && { description: value.description })
+          };
+          
+          // If no required field is explicitly set, assume all fields are required
+          // You might want to adjust this logic based on your specific needs
+          required.push(key);
+        }
+      });
+
+      return {
+        name: tool.name,
+        description: tool.description,
+        input_schema: {
+          type: "object",
+          properties: properties,
+          ...(required.length > 0 && { required: required })
+        }
+      };
+    });
   }
 }
