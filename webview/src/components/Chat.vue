@@ -9,78 +9,84 @@ const loading = ref(false)
 const error = ref(null)
 const messages = ref<Message[]>([]);
 
-async function processTextContentBlock(response) {
-  if (response?.delta?.text) {
-    const lastMessage = messages.value[messages.value.length - 1] as Message;
-
-    if (lastMessage.role === "user") {
-      const messageContent = { "type": "text", "text": response.delta.text } as MessageContent;
-      const message = { "content": [messageContent], "role": "assistant" } as Message;
-      messages.value.push(message)
-    }
-    else if (lastMessage.role === "assistant") {
-      lastMessage.content[0].text += response.delta.text
-    }
-    else {
-      throw new Error(`Unsupported role ${lastMessage.role}`)
-    }
-  }
-}
-
-async function processToolUseContentBlock(response, toolName, toolId) {
-  const lastMessage = messages.value[messages.value.length - 1] as Message;
-  const lastContent = lastMessage.content[lastMessage.content.length - 1] as MessageContent;
-
-  if (lastContent.type != "tool_use") {
-    lastMessage.content.push({ type: "tool_use", id: toolId, name: toolName, inputBuffer: "" } as MessageContent);
-    return
-  }
-
-  if (response?.delta?.partial_json) {
-    lastContent.inputBuffer += response.delta.partial_json;
-  }
-}
 
 async function processInference() {
-  let currentContentBlock = null;
   const mcpClient = store.getMcpClient();
   const tools = mcpClient.convertMcpToolsForInference(store.mcpTools);
 
   for await (const response of mcpClient.inference(messages.value, tools)) {
-    if (response?.content_block) {
-      currentContentBlock = response.content_block;
+    if (response?.type == "message_start") {
+      messages.value.push({ "content": [], "role": "assistant" } as Message)
+      continue
     }
 
-    if (currentContentBlock?.type == "text") {
-      processTextContentBlock(response);
-    } else if (currentContentBlock?.type == "tool_use") {
-      processToolUseContentBlock(response, currentContentBlock.name, currentContentBlock.id);
+    const assistantMessage = messages.value[messages.value.length - 1];
+
+    if (response?.type == "content_block_start") {
+      if (response.content_block.type == "text") {
+        const messageContent = { type: "text", text: "" } as MessageContent;
+        assistantMessage.content.splice(response.index, 0, messageContent);
+      } else if (response.content_block.type == "tool_use") {
+        const messageContent = { type: "tool_use", id: response.content_block.id, name: response.content_block.name, inputBuffer: "" } as MessageContent;
+        assistantMessage.content.splice(response.index, 0, messageContent);
+      }
+      continue
+    }
+
+    if (response?.type == "content_block_delta") {
+      const content = assistantMessage.content[response.index];
+
+      if (content.type == "text") {
+        content.text += response.delta.text
+      } else if (content.type == "tool_use") {
+        content.inputBuffer += response.delta.partial_json;
+      }
+      continue
+    }
+
+    if (response?.type == "content_block_stop") {
+      const content = assistantMessage.content[response.index];
+
+      if (content.type == "tool_use") {
+        content.input = JSON.parse(content.inputBuffer);
+        content.inputBuffer = undefined;
+      }
+      continue
     }
   };
 }
 
 async function processTool() {
   const mcpClient = store.getMcpClient();
-  const lastMessage = messages.value[messages.value.length - 1] as Message;
-  const lastContent = lastMessage.content[lastMessage.content.length - 1] as MessageContent;  
+  const assistantMessage = messages.value[messages.value.length - 1];
 
-  if (lastMessage.role == "assistant" && lastContent.type == "tool_use") {
+  if (assistantMessage.role !== "assistant") {
+    console.warn("Not assistant message in processTool")
+    return;
+  }
+
+  const toolUseContents = assistantMessage.content.filter(content => content.type == "tool_use") as Array<MessageContent>;
+
+  if (toolUseContents.length === 0) {
+    console.warn("Could not find toolUseContents in processTool")
+    return;
+  }
+
+  const message = { "content": [], "role": "user" } as Message;
+  messages.value.push(message);
+
+  for (const toolUseContent of toolUseContents) {
     const result = await mcpClient.callTool({
-      name: lastContent.name,
-      id: lastContent.id,
-      inputJson: lastContent.inputBuffer,
+      name: toolUseContent.name,
+      id: toolUseContent.id,
+      inputJson: JSON.stringify(toolUseContent.input),
     })
-
-    lastContent.input = JSON.parse(lastContent.inputBuffer);
-    lastContent.inputBuffer = undefined;
 
     const toolResultContent = result?.result?.content?.[0]?.text;
 
-    const messageContent = { "type": "tool_result", "tool_use_id": lastContent.id, "content": toolResultContent } as MessageContent;
-    const message = { "content": [messageContent], "role": "user" } as Message;
-    messages.value.push(message);
-
-    await processInference();
+    const messageContent = { "type": "tool_result", "tool_use_id": toolUseContent.id, "content": toolResultContent } as MessageContent;
+    const userMessage = messages.value[messages.value.length - 1];
+    userMessage.content.push(messageContent)
   }
 }
 
@@ -89,8 +95,16 @@ async function onSendUserMessage(content) {
   const message = { "content": [messageContent], "role": "user" } as Message;
   messages.value.push(message);  
   
-  await processInference();
-  await processTool();
+  while (true) {
+    await processInference();
+    await processTool();
+
+    const lastMessage = messages.value[messages.value.length - 1];
+
+    if (lastMessage.role === "assistant") {
+      break;
+    }
+  }
 }
 </script>
 
@@ -98,5 +112,6 @@ async function onSendUserMessage(content) {
   <div class="flex flex-col space-y-2">
     <ChatMesage v-for="message in messages" :message="message"/>
     <ChatForm @send-user-message="onSendUserMessage" />
+    <p>{{  messages  }}</p>
   </div>
 </template>
