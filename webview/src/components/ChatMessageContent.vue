@@ -1,5 +1,12 @@
 <script setup lang="ts">
-defineProps(["content", "role"]);
+import { computed } from 'vue'
+import { marked } from "../../node_modules/marked";
+
+const props = defineProps(["content", "role"]);
+
+const compiledMarkdown = computed(() => {
+  return marked.parse(props.content.text)
+})
 </script>
 
 <template>
@@ -8,9 +15,9 @@ defineProps(["content", "role"]);
     class="flex items-start gap-2.5 justify-end"
   >
     <div
-      class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 bg-blue-500 rounded-s-xl rounded-ee-xl"
+      class="flex flex-col w-full leading-1.5 p-4 bg-blue-500 rounded-s-xl rounded-ee-xl"
     >
-      <p class="text-sm font-normal text-white">{{ content.text }}</p>
+      <div class="text-sm font-normal text-white" v-html="compiledMarkdown"></div>
     </div>
     <!-- Simple robot/AI assistant icon -->
     <svg
@@ -60,7 +67,7 @@ defineProps(["content", "role"]);
       <path d="M10 2L8 4L16 12L8 20L10 22L20 12L10 2Z" fill="#ea580c" />
     </svg>
     <div
-      class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 bg-orange-100 rounded-e-xl rounded-es-xl"
+      class="flex flex-col w-full leading-1.5 p-4 bg-orange-100 rounded-e-xl rounded-es-xl"
     >
       <p class="text-xs font-semibold text-orange-800 mb-1">🔧 Tool Call</p>
       <p class="text-sm font-normal text-gray-900">{{ content.content }}</p>
@@ -102,7 +109,7 @@ defineProps(["content", "role"]);
       </g>
     </svg>
     <div
-      class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 bg-gray-100 rounded-e-xl rounded-es-xl"
+      class="flex flex-col w-full leading-1.5 p-4 bg-gray-100 rounded-e-xl rounded-es-xl"
     >
       <p class="text-sm font-normal text-gray-900">{{ content.text }}</p>
     </div>
