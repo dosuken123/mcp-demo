@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "watch": "vite build --watch",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "format": "npx prettier . --write"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
+    "prettier": "^3.6.2",
     "vite": "^6.2.4",
     "vite-plugin-vue-devtools": "^7.7.2"
   }
