@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 import { marked } from "../../node_modules/marked";
 
 const props = defineProps(["content", "role"]);
 
 const compiledMarkdown = computed(() => {
-  return marked.parse(props.content.text)
-})
+  return marked.parse(props.content.text);
+});
 </script>
 
 <template>
@@ -17,7 +17,10 @@ const compiledMarkdown = computed(() => {
     <div
       class="flex flex-col w-full leading-1.5 p-4 bg-blue-500 rounded-s-xl rounded-ee-xl"
     >
-      <div class="text-sm font-normal text-white" v-html="compiledMarkdown"></div>
+      <div
+        class="text-sm font-normal text-white"
+        v-html="compiledMarkdown"
+      ></div>
     </div>
     <!-- Simple robot/AI assistant icon -->
     <svg

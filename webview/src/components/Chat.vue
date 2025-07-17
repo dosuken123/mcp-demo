@@ -61,12 +61,29 @@ async function processInference() {
   }
 }
 
-async function processTool() {
+async function processTool(toolUseContent) {
   const mcpClient = store.getMcpClient();
+
+  const result = await mcpClient.callTool({
+    name: toolUseContent.name,
+    id: toolUseContent.id,
+    inputJson: JSON.stringify(toolUseContent.input),
+  });
+
+  const toolResultContent = result?.result?.content?.[0]?.text;
+
+  const userMessage = messages.value[messages.value.length - 1];
+  const content = userMessage.content.find(
+    (content) => content.tool_use_id == toolUseContent.id,
+  );
+  content.content = toolResultContent;
+}
+
+async function processTools() {
   const assistantMessage = messages.value[messages.value.length - 1];
 
   if (assistantMessage.role !== "assistant") {
-    console.warn("Not assistant message in processTool");
+    console.warn("Not assistant message in processTools");
     return;
   }
 
@@ -75,30 +92,27 @@ async function processTool() {
   ) as Array<MessageContent>;
 
   if (toolUseContents.length === 0) {
-    console.warn("Could not find toolUseContents in processTool");
     return;
   }
 
-  const message = { content: [], role: "user" } as Message;
+  // Prepare content result entries
+  const toolResultContents = toolUseContents.map(
+    (toolUseContent) =>
+      ({
+        type: "tool_result",
+        tool_use_id: toolUseContent.id,
+        content: "",
+      }) as MessageContent,
+  );
+
+  const message = { content: toolResultContents, role: "user" } as Message;
   messages.value.push(message);
 
-  for (const toolUseContent of toolUseContents) {
-    const result = await mcpClient.callTool({
-      name: toolUseContent.name,
-      id: toolUseContent.id,
-      inputJson: JSON.stringify(toolUseContent.input),
-    });
+  const processes = toolUseContents.map((toolUseContent) =>
+    processTool(toolUseContent),
+  );
 
-    const toolResultContent = result?.result?.content?.[0]?.text;
-
-    const messageContent = {
-      type: "tool_result",
-      tool_use_id: toolUseContent.id,
-      content: toolResultContent,
-    } as MessageContent;
-    const userMessage = messages.value[messages.value.length - 1];
-    userMessage.content.push(messageContent);
-  }
+  await Promise.all(processes);
 }
 
 async function onSendUserMessage(content) {
@@ -109,7 +123,7 @@ async function onSendUserMessage(content) {
 
   while (true) {
     await processInference();
-    await processTool();
+    await processTools();
 
     const lastMessage = messages.value[messages.value.length - 1];
 
