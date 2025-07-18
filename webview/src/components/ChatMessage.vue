@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import ChatMessageContent from "./ChatMessageContent.vue";
+import AssistantMessage from "./messages/AssistantMessage.vue";
+import UserMessage from "./messages/UserMessage.vue";
 
 defineProps(["message"]);
 </script>
 
 <template>
-  <ChatMessageContent
-    v-for="content in message.content"
-    :content="content"
-    :role="message.role"
-  />
+  <assistant-message v-if="message.role == 'assistant'" :message="message" />
+  <user-message v-if="message.role == 'user'" :message="message" />
 </template>
