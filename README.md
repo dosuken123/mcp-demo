@@ -14,6 +14,8 @@ While this demo is written in Python as backend server and Vue.js as frontend se
 the implemented logic can be translated/adopted into the other programming language
 where the SDKs might not support yet.
 
+![demo](doc/img/demo.gif)
+
 ## Getting started
 
 1. Run [frontend](./frontend/README.md).
