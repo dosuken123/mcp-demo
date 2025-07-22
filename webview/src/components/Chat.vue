@@ -6,7 +6,6 @@ import ChatForm from "./ChatForm.vue";
 import { Message, MessageContent, Tool } from "./MCPClient";
 
 const loading = ref(false);
-const debug = ref(false);
 const error = ref(null);
 const messages = ref<Message[]>([]);
 
@@ -140,6 +139,6 @@ async function onSendUserMessage(content) {
   <div class="flex flex-col space-y-2">
     <ChatMesage v-for="message in messages" :message="message" />
     <ChatForm v-if="!loading" @send-user-message="onSendUserMessage" />
-    <div v-if="debug">{{ messages }}</div>
+    <div v-if="store.debug">{{ messages }}</div>
   </div>
 </template>

@@ -5,6 +5,7 @@ export const store = reactive({
   mcpClinet: null,
   mcpTools: [],
   hasValidAccessToken: false,
+  debug: false,
 
   updateHasValidAccessToken(flag) {
     this.hasValidAccessToken = flag;
