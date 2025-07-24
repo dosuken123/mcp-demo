@@ -1,13 +1,22 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch, useTemplateRef } from "vue";
 import { store } from "./store";
-import ChatMesage from "./ChatMessage.vue";
+import ChatMessage from "./ChatMessage.vue";
 import ChatForm from "./ChatForm.vue";
 import { Message, MessageContent, Tool } from "./MCPClient";
 
 const loading = ref(false);
 const error = ref(null);
 const messages = ref<Message[]>([]);
+const chatBoxBottom = ref(null);
+
+watch(
+  messages,
+  async (newMessages, oldMessages) => {
+    chatBoxBottom.value?.scrollIntoView({ behavior: "smooth" });
+  },
+  { deep: true, flush: "post" },
+);
 
 async function processInference() {
   const mcpClient = store.getMcpClient();
@@ -136,9 +145,12 @@ async function onSendUserMessage(content) {
 </script>
 
 <template>
-  <div class="flex flex-col space-y-2">
-    <ChatMesage v-for="message in messages" :message="message" />
-    <ChatForm v-if="!loading" @send-user-message="onSendUserMessage" />
-    <div v-if="store.debug">{{ messages }}</div>
+  <div class="flex flex-col space-y-2 h-85/100 overflow-y-auto">
+    <chat-message v-for="message in messages" :message="message" />
+    <div ref="chatBoxBottom"></div>
   </div>
+  <div class="h-15/100">
+    <chat-form :loading="loading" @send-user-message="onSendUserMessage" />
+  </div>
+  <div v-if="store.debug">{{ messages }}</div>
 </template>

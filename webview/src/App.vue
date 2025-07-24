@@ -65,9 +65,9 @@ const login = async (): Promise<void> => {
 </style>
 
 <template>
-  <nav class="bg-white border-gray-200 dark:bg-gray-900">
+  <nav class="bg-white border-gray-200 dark:bg-gray-900 h-1/10">
     <div
-      class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4"
+      class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 h-full"
     >
       <a
         href="https://flowbite.com/"
@@ -146,8 +146,8 @@ const login = async (): Promise<void> => {
     </div>
   </nav>
 
-  <div class="p-4 sm:mx-64" v-if="store.hasValidAccessToken">
-    <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+  <div class="p-4 sm:mx-64 h-9/10" v-if="store.hasValidAccessToken">
+    <div class="mb-4 border-b border-gray-200 dark:border-gray-700 h-1/10">
       <ul
         class="flex flex-wrap -mb-px text-sm font-medium text-center"
         id="default-tab"
@@ -182,9 +182,9 @@ const login = async (): Promise<void> => {
         </li>
       </ul>
     </div>
-    <div id="default-tab-content">
+    <div id="default-tab-content" class="h-9/10">
       <div
-        class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800"
+        class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800 h-full"
         id="chat"
         role="tabpanel"
         aria-labelledby="chat-tab"
