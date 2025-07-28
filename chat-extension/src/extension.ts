@@ -79,7 +79,7 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 
   private _getHtmlForWebview() {
     const html = `
-		<iframe src="${this._webviewHttpServerUri}/" style="width:100%;min-height:500px;max-height:1000px;top:0px;left:0px;position:absolute;border:none;"></iframe>
+		<iframe src="${this._webviewHttpServerUri}/" style="width:100%;height:100vh;top:0px;left:0px;position:absolute;border:none;"></iframe>
 		`;
 
     return html;
