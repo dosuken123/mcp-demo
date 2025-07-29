@@ -10,7 +10,7 @@ This demo uses [Streamable HTTP](https://modelcontextprotocol.io/specification/2
 This demo does NOT use the [stdio transport](https://modelcontextprotocol.io/docs/concepts/transports#standard-input%2Foutput-stdio) which is designed for the "local" MCP server.
 There are several reasons why it's preferred to go after a **remote** MCP Server rather than a local MCP Server. See [Why should we introduce remote MCP server?](#why-should-we-introduce-remote-mcp-server) for more information.
 
-While this demo is written in Python as backend server and Vue.js as frontend server,
+While this demo is written in Python as backend server and Vue.js/vite as webview server,
 the implemented logic can be translated/adopted into the other programming language
 where the SDKs might not support yet.
 
@@ -36,7 +36,7 @@ where the SDKs might not support yet.
 This demo is based on the latest MCP spec described in https://modelcontextprotocol.io/specification/2025-06-18.
 
 - It supports OAuth2.1 flow according to https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#2-2-example%3A-authorization-code-grant. This auth flow supports PKCE (generating code challenge with SHA256) as it's required in OAuth 2.1.
-- The frontend component represents:
+- The frontend component represents (e.g. webview, language server, editor extension):
   - **MCP Host** and **MCP Client** in [MCP glossary](https://modelcontextprotocol.io/introduction).
   - **Client** in [OAuth glossary](https://datatracker.ietf.org/doc/draft-ietf-oauth-v2-1/).
 - The backend component represents:
