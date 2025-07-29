@@ -6,7 +6,7 @@ It follows [Model Context Protocol spec](https://modelcontextprotocol.io/introdu
 MCP flow, including authentication and authorization via OAuth2.1.
 This is mainly for enterprise software/server that can't use MCP SDKs as-is due to the existing server stack and business logic.
 
-This demo uses [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http) for the **remote** MCP Server implementation, which allows you to **unify** your data server and MCP server.
+This demo uses [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http) for the **remote** MCP Server implementation, which allows you to **unify** your data server and MCP server.
 This demo does NOT use the [stdio transport](https://modelcontextprotocol.io/docs/concepts/transports#standard-input%2Foutput-stdio) which is designed for the "local" MCP server.
 There are several reasons why it's preferred to go after a **remote** MCP Server rather than a local MCP Server. See [Why should we introduce remote MCP server?](#why-should-we-introduce-remote-mcp-server) for more information.
 
@@ -33,9 +33,9 @@ where the SDKs might not support yet.
 
 ## Overview
 
-This demo is based on the latest MCP spec described in https://modelcontextprotocol.io/specification/2025-03-26.
+This demo is based on the latest MCP spec described in https://modelcontextprotocol.io/specification/2025-06-18.
 
-- It supports OAuth2.1 flow according to https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#2-2-example%3A-authorization-code-grant. This auth flow supports PKCE (generating code challenge with SHA256) as it's required in OAuth 2.1.
+- It supports OAuth2.1 flow according to https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#2-2-example%3A-authorization-code-grant. This auth flow supports PKCE (generating code challenge with SHA256) as it's required in OAuth 2.1.
 - The frontend component represents:
   - **MCP Host** and **MCP Client** in [MCP glossary](https://modelcontextprotocol.io/introduction).
   - **Client** in [OAuth glossary](https://datatracker.ietf.org/doc/draft-ietf-oauth-v2-1/).
@@ -53,7 +53,7 @@ Here is the auth flow:
 
 ## Why should we introduce remote MCP server?
 
-Model Context Protocol  takes some inspiration from the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/), which is mentioned in https://modelcontextprotocol.io/specification/2025-03-26:
+Model Context Protocol  takes some inspiration from the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/), which is mentioned in https://modelcontextprotocol.io/specification/2025-06-18:
 
 > MCP takes some inspiration from the Language Server Protocol, which standardizes how to add support for programming languages across a whole ecosystem of development tools. In a similar way, MCP standardizes how to integrate additional context and tools into the ecosystem of AI applications.
 
