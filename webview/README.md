@@ -25,5 +25,12 @@ npm run dev
 ### Compile and Minify for Production and chat-extension
 
 ```sh
+npm run watch
+```
+
+
+Alternatively, you can build only once:
+
+```sh
 npm run build
 ```

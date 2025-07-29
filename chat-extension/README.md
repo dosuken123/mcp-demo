@@ -16,6 +16,14 @@ For example if there is an image subfolder under your extension project workspac
 
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 
+## Run extension
+
+1. Open the extension directory in VSCode e.g. `cd <path>/mcp-demo/chat-extension`.
+1. Navigate to **RUN AND DEBUG** from the activity bar at left.
+   Alternatively, click **F5** as a shortcut.
+
+See https://code.visualstudio.com/api/extension-guides/debugger-extension for more information.
+
 ## Extension Settings
 
 Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.

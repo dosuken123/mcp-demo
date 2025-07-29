@@ -10,11 +10,13 @@
 
 ## Start server
 
+Open a terminal and run:
+
 ```shell
 poetry run fastapi dev backend/main.py --host localhost
 ```
 
-If you test inference, you need to set the following environment variables:
+If you test inference, you need to set the following environment variables before running the command:
 
 ```
 export ANTHROPIC_API_KEY=[REDACTED]
@@ -22,9 +24,13 @@ export ANTHROPIC_API_KEY=[REDACTED]
 
 ## Test modules
 
+Enter python interactive session:
+
 ```python
 poetry run python
 ```
+
+Try out a module:
 
 ```python
 from backend.mcp.schema import JSONRPCRequest
@@ -48,19 +54,12 @@ export JSON_SCHEMA_URL=https://raw.githubusercontent.com/modelcontextprotocol/mo
 make schema
 ```
 
-Later you can test by:
-
-```shell
-poetry run python
-```
-
-```python
-from backend.mcp.schema import JSONRPCRequest
-
-JSONRPCRequest(id="1", method="test", params={"a": "b"})
-```
+Later you can test the generated module by [test modules](#test-modules) section.
 
 ## Test MCP endpoints
+
+Run a server with `BYPASS_AUTH=true`.
+Setting `BYPASS_AUTH=true` allows you to directly access to the MCP endpoints:
 
 ```shell
 export BYPASS_AUTH=true
@@ -379,6 +378,9 @@ Response:
 
 ## Test inference
 
+Backend also provides a inference endpoint for generating an AI response.
+You can test by the following endpoint:
+
 ```shell
 curl -X POST \
      http://localhost:8000/inference \
@@ -401,7 +403,7 @@ curl -X POST \
 }'
 ```
 
-## Test Login screen
+## Test Login screen for OAuth
 
 Access this URL in a web browser:
 

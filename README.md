@@ -18,8 +18,18 @@ where the SDKs might not support yet.
 
 ## Getting started
 
-1. Run [frontend](./frontend/README.md).
-1. Run [backend](./backend/README.md).
+### Run chat on VS Code extension
+
+1. [Run backend server](./backend/README.md#start-server).
+1. [Build webview](./webview/README.md#compile-and-minify-for-production-and-chat-extension).
+1. [Build language server](./language-server/README.md).
+1. [Run chat extension](./chat-extension/README.md#run-extension)
+
+### Run chat on browser
+
+1. [Run backend server](./backend/README.md#start-server).
+1. [Run webview server](./webview/README.md#compile-and-hot-reload-for-development).
+1. Access http://localhost:5173/ in a browser.
 
 ## Overview
 
